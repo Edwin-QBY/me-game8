@@ -2,38 +2,38 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>World Front 世界戰線</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden}
-body{background:#080c10;color:#d7e0ea;font-family:"Segoe UI","Microsoft JhengHei",system-ui,sans-serif;font-size:13px}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:#050b12;color:#d7e0ea;font-family:"Segoe UI","Microsoft JhengHei",system-ui,sans-serif;font-size:13px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #app{display:flex;flex-direction:column;height:100%}
-#topbar{height:42px;background:#10161e;border-bottom:1px solid #1f2b38;display:flex;align-items:center;gap:16px;padding:0 14px;flex-shrink:0;font-size:12px}
+#topbar{height:42px;background:#0d151d;border-bottom:1px solid #1c2836;display:flex;align-items:center;gap:14px;padding:0 12px;flex-shrink:0;font-size:12px}
 #topbar .brand{font-weight:700;letter-spacing:2px;color:#5fb0ff}
 #topbar b{color:#fff}
 #topbar .sp{flex:1}
-button{background:#1b2734;color:#cfe0f0;border:1px solid #2c3d50;border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit}
+button{background:#1b2734;color:#cfe0f0;border:1px solid #2c3d50;border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;touch-action:manipulation}
 button:hover{background:#24374a;border-color:#3d5872}
 button:active{transform:translateY(1px)}
 button.pri{background:#1d4f7c;border-color:#2e79b8;color:#dff0ff}
 button.pri:hover{background:#25679d}
 button.danger{background:#5c2323;border-color:#8a3838}
 #main{flex:1;display:flex;min-height:0}
-#sidebar{width:320px;background:#0c1218;border-right:1px solid #1f2b38;overflow-y:auto;padding:8px;flex-shrink:0}
+#sidebar{width:320px;background:#0a1017;border-right:1px solid #1c2836;overflow-y:auto;padding:8px;flex-shrink:0}
 #sidebar::-webkit-scrollbar{width:6px}
 #sidebar::-webkit-scrollbar-thumb{background:#233140;border-radius:3px}
-#canvasWrap{flex:1;position:relative;min-width:0}
-canvas{display:block;width:100%;height:100%;cursor:grab}
+#canvasWrap{flex:1;position:relative;min-width:0;touch-action:none}
+canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
 canvas.drag{cursor:grabbing}
-#log{height:84px;background:#060a0e;border-top:1px solid #1f2b38;padding:5px 12px;overflow-y:auto;font-size:11px;font-family:ui-monospace,monospace;color:#7d93a8;flex-shrink:0;line-height:1.5}
+#log{height:84px;background:#050a0e;border-top:1px solid #1c2836;padding:5px 12px;overflow-y:auto;font-size:11px;font-family:ui-monospace,monospace;color:#7d93a8;flex-shrink:0;line-height:1.5}
 #log::-webkit-scrollbar{width:6px}
 #log::-webkit-scrollbar-thumb{background:#1e2b38}
 .log-warn{color:#ff9f5a}
 .log-bad{color:#ff6b6b}
 .log-good{color:#5fd08a}
-.sec{margin-bottom:9px;background:#0f1720;border:1px solid #1b2836;border-radius:5px;overflow:hidden}
-.sec-title{padding:5px 9px;background:#141f2b;font-size:11px;letter-spacing:1px;color:#7fa8cc;border-bottom:1px solid #1b2836;font-weight:600}
+.sec{margin-bottom:9px;background:#0d161f;border:1px solid #1b2836;border-radius:5px;overflow:hidden}
+.sec-title{padding:5px 9px;background:#12202c;font-size:11px;letter-spacing:1px;color:#7fa8cc;border-bottom:1px solid #1b2836;font-weight:600}
 .sec-body{padding:8px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:2px 0}
 .eq-row{display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid #16202b;font-size:11px}
@@ -42,7 +42,7 @@ canvas.drag{cursor:grabbing}
 .eq-cnt{color:#6fc4ff;font-weight:700;min-width:26px;text-align:right}
 .mini{padding:1px 5px;font-size:10px;border-radius:3px;line-height:1.5}
 .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.shop-btn{text-align:left;padding:4px 6px;font-size:10px;line-height:1.35}
+.shop-btn{text-align:left;padding:4px 6px;font-size:10px;line-height:1.35;position:relative}
 .shop-btn .c{color:#ffd166;float:right}
 .shop-btn .n{display:block;color:#c9dcee}
 .shop-btn.dis{opacity:.38;cursor:not-allowed}
@@ -65,7 +65,7 @@ canvas.drag{cursor:grabbing}
     <span class="brand">WORLD FRONT</span>
     <span>資源 <b id="uiRes">0</b></span>
     <span>Tick <b id="uiTick">0</b></span>
-    <span>領土 <b id="uiNodes">0</b>/256</span>
+    <span>領土 <b id="uiNodes">0</b></span>
     <span id="uiStatus"></span>
     <span class="sp"></span>
     <button id="btnPause">暫停</button>
@@ -74,14 +74,14 @@ canvas.drag{cursor:grabbing}
   <div id="main">
     <div id="sidebar">
       <div class="sec"><div class="sec-title">我的軍隊</div><div class="sec-body" id="armyList"></div></div>
-      <div class="sec" id="selSec"><div class="sec-title">選中部隊</div><div class="sec-body" id="selPanel"></div></div>
+      <div class="sec"><div class="sec-title">選中部隊 / 節點</div><div class="sec-body" id="selPanel"></div></div>
       <div class="sec"><div class="sec-title">兵工廠（點擊加入選中部隊）</div><div class="sec-body"><div class="shop-grid" id="shop"></div></div></div>
-      <div class="sec"><div class="sec-title">操作說明</div><div class="sec-body" style="font-size:11px;line-height:1.7;color:#7d93a8">
-        拖動畫布平移視野 · 滾輪縮放<br>
-        點節點查看 · 點軍隊選中<br>
-        選中軍隊後點相鄰節點移動<br>
-        點同節點另一支己方軍隊＝合併<br>
-        拆出的部隊可在面板中改名
+      <div class="sec"><div class="sec-title">操作</div><div class="sec-body" style="font-size:11px;line-height:1.7;color:#7d93a8">
+        單指拖動畫布平移<br>
+        雙指捏合縮放地圖<br>
+        輕點節點/軍隊選中<br>
+        選中部隊後點相鄰節點移動<br>
+        同節點另一支己方部隊＝合併
       </div></div>
     </div>
     <div id="canvasWrap"><canvas id="cv"></canvas></div>
@@ -90,16 +90,15 @@ canvas.drag{cursor:grabbing}
 </div>
 <script>
 'use strict';
+
 /* ============================================================
-   常數配置（數值可自由調整）
+   常數
    ============================================================ */
-const GRID = 32;            // 32x32 = 1024 格，取前 256 格為節點
-const CELL = 140;           // 每格世界像素
-const WORLD = GRID * CELL;  // 4480
-const TICK_MS = 700;        // 每 tick 毫秒
+const WORLD = 4000;            // 世界座標邊長
+const TICK_MS = 700;
+const DMG_K = 0.45;
+const SPEED_BASE = 0.14;
 const TARGET_NODES = 256;
-const DMG_K = 0.45;         // 戰鬥傷害係數
-const SPEED_BASE = 0.14;    // 移動基礎速度（每 tick 進度）
 
 const EQ = {
   rifle:   {name:'步槍班',    type:'inf', I:3,   A:0.3, AA:0,  cost:10, cat:'輕武器'},
@@ -120,20 +119,150 @@ const EQ = {
 };
 const EQ_KEYS = Object.keys(EQ);
 
-const FAC_COLOR = {player:'#4ea8ff', ai1:'#ff5a5a', ai2:'#ffb84e', neutral:'#5a6773'};
+const FAC_COLOR = {player:'#4ea8ff', ai1:'#ff5a5a', ai2:'#ffb84e', neutral:'#4a5763'};
 const FAC_NAME  = {player:'玩家', ai1:'阿爾法', ai2:'貝塔', neutral:'中立'};
 const PLAYABLE  = ['player','ai1','ai2'];
 
 /* ============================================================
-   工具
+   真實世界近似大陸多邊形（歸一化 0-1）
    ============================================================ */
-function fract(x){ return x - Math.floor(x); }
-function rnd(seed){ return fract(Math.sin(seed*12.9898)*43758.5453); }
-function clamp(v,a,b){ return v<a?a:v>b?b:v; }
-function dist2(ax,ay,bx,by){ const dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
+const LAND_RAW = [
+  // 北美洲
+  {name:'na', pts:[
+    [0.030,0.220],[0.055,0.190],[0.090,0.165],[0.130,0.155],[0.170,0.150],
+    [0.210,0.155],[0.245,0.170],[0.270,0.190],[0.290,0.215],[0.295,0.245],
+    [0.300,0.275],[0.305,0.305],[0.300,0.330],[0.290,0.355],[0.275,0.375],
+    [0.260,0.395],[0.250,0.415],[0.235,0.430],[0.220,0.440],[0.205,0.430],
+    [0.200,0.410],[0.185,0.395],[0.170,0.380],[0.155,0.365],[0.140,0.350],
+    [0.120,0.335],[0.100,0.320],[0.080,0.300],[0.060,0.280],[0.040,0.250]
+  ]},
+  // 格陵蘭
+  {name:'gl', pts:[
+    [0.300,0.075],[0.335,0.065],[0.370,0.075],[0.395,0.095],[0.405,0.120],
+    [0.395,0.145],[0.370,0.160],[0.340,0.165],[0.315,0.155],[0.300,0.135],
+    [0.295,0.110],[0.295,0.090]
+  ]},
+  // 南美洲
+  {name:'sa', pts:[
+    [0.235,0.505],[0.270,0.500],[0.295,0.510],[0.315,0.530],[0.320,0.555],
+    [0.315,0.580],[0.305,0.610],[0.295,0.640],[0.285,0.670],[0.275,0.700],
+    [0.265,0.730],[0.255,0.760],[0.245,0.785],[0.238,0.805],[0.230,0.820],
+    [0.225,0.800],[0.218,0.775],[0.212,0.750],[0.208,0.725],[0.200,0.700],
+    [0.195,0.675],[0.190,0.650],[0.185,0.625],[0.180,0.600],[0.178,0.575],
+    [0.180,0.550],[0.190,0.530],[0.200,0.515],[0.215,0.508]
+  ]},
+  // 歐洲
+  {name:'eu', pts:[
+    [0.435,0.155],[0.470,0.135],[0.505,0.135],[0.535,0.150],[0.555,0.175],
+    [0.560,0.200],[0.555,0.225],[0.545,0.250],[0.530,0.270],[0.515,0.285],
+    [0.500,0.300],[0.485,0.310],[0.470,0.305],[0.455,0.295],[0.445,0.280],
+    [0.438,0.260],[0.432,0.240],[0.428,0.220],[0.430,0.200],[0.432,0.180],
+    [0.433,0.165]
+  ]},
+  // 非洲
+  {name:'af', pts:[
+    [0.435,0.400],[0.470,0.395],[0.505,0.390],[0.535,0.400],[0.555,0.420],
+    [0.565,0.450],[0.565,0.480],[0.560,0.510],[0.550,0.540],[0.540,0.570],
+    [0.530,0.600],[0.520,0.630],[0.510,0.660],[0.500,0.690],[0.490,0.715],
+    [0.480,0.725],[0.470,0.715],[0.460,0.695],[0.450,0.670],[0.440,0.645],
+    [0.428,0.620],[0.418,0.595],[0.410,0.570],[0.405,0.545],[0.402,0.520],
+    [0.400,0.495],[0.405,0.470],[0.415,0.450],[0.425,0.425]
+  ]},
+  // 亞洲
+  {name:'as', pts:[
+    [0.555,0.200],[0.575,0.180],[0.605,0.165],[0.640,0.155],[0.680,0.145],
+    [0.720,0.140],[0.760,0.140],[0.800,0.150],[0.835,0.170],[0.860,0.195],
+    [0.877,0.225],[0.882,0.255],[0.875,0.285],[0.860,0.315],[0.845,0.340],
+    [0.835,0.365],[0.825,0.385],[0.810,0.405],[0.795,0.425],[0.780,0.440],
+    [0.765,0.455],[0.750,0.465],[0.735,0.470],[0.720,0.465],[0.705,0.455],
+    [0.690,0.440],[0.675,0.450],[0.660,0.465],[0.645,0.475],[0.630,0.470],
+    [0.615,0.455],[0.600,0.440],[0.588,0.420],[0.578,0.400],[0.568,0.380],
+    [0.558,0.355],[0.548,0.330],[0.540,0.305],[0.535,0.280],[0.538,0.255],
+    [0.545,0.230]
+  ]},
+  // 澳洲
+  {name:'au', pts:[
+    [0.790,0.655],[0.820,0.635],[0.855,0.630],[0.885,0.645],[0.900,0.670],
+    [0.895,0.695],[0.880,0.720],[0.860,0.740],[0.835,0.750],[0.810,0.745],
+    [0.790,0.730],[0.778,0.710],[0.770,0.685],[0.775,0.670]
+  ]},
+  // 英國
+  {name:'uk', pts:[
+    [0.452,0.185],[0.468,0.180],[0.480,0.190],[0.482,0.210],[0.475,0.225],
+    [0.462,0.228],[0.452,0.215],[0.448,0.200]
+  ]},
+  // 愛爾蘭
+  {name:'ie', pts:[
+    [0.428,0.195],[0.440,0.192],[0.443,0.205],[0.435,0.215],[0.425,0.210]
+  ]},
+  // 日本
+  {name:'jp', pts:[
+    [0.835,0.240],[0.848,0.235],[0.858,0.245],[0.862,0.265],[0.855,0.285],
+    [0.845,0.300],[0.838,0.295],[0.833,0.275],[0.830,0.255]
+  ]},
+  // 馬達加斯加
+  {name:'mg', pts:[
+    [0.555,0.655],[0.568,0.650],[0.575,0.665],[0.572,0.685],[0.563,0.695],
+    [0.555,0.688],[0.550,0.670]
+  ]},
+  // 紐西蘭
+  {name:'nz', pts:[
+    [0.920,0.775],[0.932,0.770],[0.940,0.785],[0.932,0.800],[0.920,0.798],
+    [0.915,0.785]
+  ]},
+  // 蘇門答臘
+  {name:'id1', pts:[[0.715,0.545],[0.740,0.530],[0.755,0.540],[0.750,0.565],[0.730,0.570]]},
+  // 婆羅洲
+  {name:'id2', pts:[[0.755,0.510],[0.790,0.500],[0.805,0.520],[0.790,0.545],[0.765,0.540]]},
+  // 新幾內亞
+  {name:'id3', pts:[[0.815,0.525],[0.855,0.520],[0.870,0.535],[0.850,0.555],[0.820,0.550]]},
+  // 菲律賓
+  {name:'ph', pts:[[0.800,0.440],[0.815,0.435],[0.822,0.455],[0.810,0.475],[0.798,0.465]]},
+  // 斯里蘭卡
+  {name:'lk', pts:[[0.685,0.505],[0.695,0.500],[0.700,0.515],[0.690,0.520]]},
+  // 冰島
+  {name:'is', pts:[[0.395,0.145],[0.410,0.140],[0.420,0.150],[0.415,0.165],[0.400,0.165],[0.393,0.155]]},
+];
 
 /* ============================================================
-   DOM
+   工具
+   ============================================================ */
+function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+function bboxOf(pts){
+  let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(const [x,y] of pts){
+    if(x<minX)minX=x; if(y<minY)minY=y;
+    if(x>maxX)maxX=x; if(y>maxY)maxY=y;
+  }
+  return {minX,minY,maxX,maxY};
+}
+function pointInPoly(px,py,poly){
+  let inside=false;
+  const pts=poly.pts, n=pts.length;
+  for(let i=0,j=n-1;i<n;j=i++){
+    const xi=pts[i][0], yi=pts[i][1];
+    const xj=pts[j][0], yj=pts[j][1];
+    if(((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi)){
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+function pointInLand(px,py,land){
+  for(const poly of land){
+    const b=poly.bbox;
+    if(px<b.minX||px>b.maxX||py<b.minY||py>b.maxY) continue;
+    if(pointInPoly(px,py,poly)) return true;
+  }
+  return false;
+}
+function hexA(hex,a){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* ============================================================
+   DOM / Canvas
    ============================================================ */
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
@@ -153,12 +282,13 @@ window.addEventListener('resize', resize);
 /* ============================================================
    相機
    ============================================================ */
-const cam = {x:WORLD/2, y:WORLD/2, zoom:0.30};
+const cam = {x:WORLD/2, y:WORLD/2, zoom:1.0};
+const ZMIN = 0.15, ZMAX = 4.5;
 function w2s(wx,wy){ return [ (wx-cam.x)*cam.zoom + VW/2, (wy-cam.y)*cam.zoom + VH/2 ]; }
 function s2w(sx,sy){ return [ (sx-VW/2)/cam.zoom + cam.x, (sy-VH/2)/cam.zoom + cam.y ]; }
 
 /* ============================================================
-   遊戲狀態
+   狀態
    ============================================================ */
 let state = null;
 let paused = false;
@@ -174,91 +304,116 @@ function log(msg, cls){
 }
 
 /* ============================================================
-   地圖生成
+   地圖生成（真實大陸 + 陸地內節點）
    ============================================================ */
-function buildMap(){
-  // 近似世界大陸分佈的中心（歸一化 0-1）
-  const centers = [
-    {x:0.17,y:0.28,r:0.19}, // 北美洲
-    {x:0.26,y:0.66,r:0.13}, // 南美洲
-    {x:0.49,y:0.24,r:0.12}, // 歐洲
-    {x:0.51,y:0.58,r:0.15}, // 非洲
-    {x:0.70,y:0.29,r:0.21}, // 亞洲
-    {x:0.76,y:0.56,r:0.09}, // 東南亞
-    {x:0.86,y:0.75,r:0.09}, // 澳洲
-  ];
+function buildLand(){
+  return LAND_RAW.map(p=>{
+    const pts = p.pts.map(([x,y])=>[x*WORLD, y*WORLD]);
+    return {name:p.name, pts, bbox:bboxOf(pts)};
+  });
+}
 
+function buildMap(){
+  const land = buildLand();
+  // 細網格採樣候選點
+  const COLS = 160, ROWS = 112;
   const cand = [];
-  for(let r=0;r<GRID;r++){
-    for(let c=0;c<GRID;c++){
-      const nx=(c+0.5)/GRID, ny=(r+0.5)/GRID;
-      let best = -9;
-      for(const ct of centers){
-        const d = Math.hypot(nx-ct.x, (ny-ct.y)*1.12);
-        const v = 1 - d/ct.r;
-        if(v>best) best = v;
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const nx = (c+0.5)/COLS;
+      const ny = (r+0.5)/ROWS;
+      const wx = nx*WORLD, wy = ny*WORLD;
+      if(pointInLand(wx,wy,land)){
+        cand.push({wx, wy});
       }
-      const noise = rnd(c*37.13 + r*91.71);
-      cand.push({r,c,score: best + noise*0.22});
     }
   }
-  cand.sort((a,b)=>b.score-a.score);
-  const picked = cand.slice(0, TARGET_NODES);
-
-  const nodes = [];
-  const idxByKey = {};
-  picked.forEach((p,i)=>{
-    const jx = (rnd(p.r*13.1+p.c*7.7)-0.5)*46;
-    const jy = (rnd(p.r*7.9+p.c*17.3)-0.5)*46;
-    nodes.push({
-      id:i, r:p.r, c:p.c,
-      wx: p.c*CELL + CELL/2 + jx,
-      wy: p.r*CELL + CELL/2 + jy,
-      owner:'neutral', terrain:'plain', income:3, defBonus:0, name:''
-    });
-    idxByKey[p.r+','+p.c] = i;
+  // 打亂候選點順序
+  for(let i=cand.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [cand[i],cand[j]] = [cand[j],cand[i]];
+  }
+  // 泊松盤採樣
+  const minD2Base = (WORLD*0.030)**2;
+  let chosen = [];
+  let minD2 = minD2Base;
+  for(let attempt=0; attempt<6 && chosen.length<TARGET_NODES; attempt++){
+    chosen = [];
+    for(const p of cand){
+      let ok = true;
+      for(const q of chosen){
+        const dx=p.wx-q.wx, dy=p.wy-q.wy;
+        if(dx*dx+dy*dy < minD2){ ok=false; break; }
+      }
+      if(ok){
+        chosen.push(p);
+        if(chosen.length>=TARGET_NODES) break;
+      }
+    }
+    minD2 *= 0.62;
+  }
+  // 如果還是不夠，隨機補
+  if(chosen.length < TARGET_NODES){
+    const seen = new Set(chosen.map(p=>p.wx+','+p.wy));
+    for(const p of cand){
+      if(chosen.length>=TARGET_NODES) break;
+      const k=p.wx+','+p.wy;
+      if(seen.has(k)) continue;
+      seen.add(k);
+      chosen.push(p);
+    }
+  }
+  // 加入抖動
+  const nodes = chosen.map((p,i)=>{
+    const jx = (Math.random()-0.5)*WORLD*0.008;
+    const jy = (Math.random()-0.5)*WORLD*0.008;
+    return {
+      id:i,
+      wx: p.wx+jx,
+      wy: p.wy+jy,
+      owner:'neutral',
+      terrain:'plain',
+      income:4,
+      defBonus:0.05,
+      name:''
+    };
   });
-
   // 地形與收入
   for(const n of nodes){
-    const sc = n.id; // 佔位
-    const rv = rnd(n.wx*0.013 + n.wy*0.021);
-    if(rv > 0.82){ n.terrain='city'; n.income=7; n.defBonus=0.20; }
+    const rv = Math.random();
+    if(rv > 0.86){ n.terrain='city'; n.income=7; n.defBonus=0.20; }
     else if(rv > 0.62){ n.terrain='mountain'; n.income=2; n.defBonus=0.32; }
-    else if(rv > 0.34){ n.terrain='coast'; n.income=4; n.defBonus=-0.08; }
+    else if(rv > 0.36){ n.terrain='coast'; n.income=4; n.defBonus=-0.08; }
     else { n.terrain='plain'; n.income=4; n.defBonus=0.05; }
     n.name = makeNodeName(n);
   }
-
-  // 連線：4 鄰域 + 部分對角
+  // 建邊：最近 4 鄰居
   const adj = nodes.map(()=>[]);
-  const has = (r,c)=> idxByKey[r+','+c]!==undefined;
+  const MAX_EDGE = WORLD * 0.115;
   const addEdge = (a,b)=>{
     if(a===b) return;
     if(!adj[a].includes(b)) adj[a].push(b);
     if(!adj[b].includes(a)) adj[b].push(a);
   };
-  for(const n of nodes){
-    const r=n.r, c=n.c;
-    if(has(r,c+1)) addEdge(n.id, idxByKey[r+','+(c+1)]);
-    if(has(r+1,c)) addEdge(n.id, idxByKey[(r+1)+','+c]);
+  for(let i=0;i<nodes.length;i++){
+    const dists = [];
+    for(let j=0;j<nodes.length;j++){
+      if(i===j) continue;
+      const dx=nodes[i].wx-nodes[j].wx, dy=nodes[i].wy-nodes[j].wy;
+      const d = Math.hypot(dx,dy);
+      if(d < MAX_EDGE) dists.push({j,d});
+    }
+    dists.sort((a,b)=>a.d-b.d);
+    for(let k=0;k<Math.min(4,dists.length);k++){
+      addEdge(i, dists[k].j);
+    }
   }
-  // 少量對角線，增加路網多樣性
-  for(const n of nodes){
-    const r=n.r, c=n.c;
-    if(has(r+1,c+1) && rnd(r*3.7+c*5.1) > 0.62) addEdge(n.id, idxByKey[(r+1)+','+(c+1)]);
-    if(has(r+1,c-1) && rnd(r*9.1+c*2.3) > 0.72) addEdge(n.id, idxByKey[(r+1)+','+(c-1)]);
-  }
-
-  // 保證連通
   fixConnectivity(nodes, adj, addEdge);
-
-  return {nodes, adj};
+  return {nodes, adj, land};
 }
 
 function fixConnectivity(nodes, adj, addEdge){
   for(let guard=0; guard<400; guard++){
-    // 找連通塊
     const seen = new Array(nodes.length).fill(false);
     const comps = [];
     for(let i=0;i<nodes.length;i++){
@@ -272,12 +427,12 @@ function fixConnectivity(nodes, adj, addEdge){
     }
     if(comps.length<=1) return;
     comps.sort((a,b)=>b.length-a.length);
-    // 從其他塊找距離主塊最近的一對
     let best=null, bd=Infinity;
     for(let ci=1;ci<comps.length;ci++){
       for(const i of comps[ci]){
         for(const j of comps[0]){
-          const d = dist2(nodes[i].wx,nodes[i].wy,nodes[j].wx,nodes[j].wy);
+          const dx=nodes[i].wx-nodes[j].wx, dy=nodes[i].wy-nodes[j].wy;
+          const d = dx*dx+dy*dy;
           if(d<bd){ bd=d; best=[i,j]; }
         }
       }
@@ -290,8 +445,8 @@ function fixConnectivity(nodes, adj, addEdge){
 const NAME_A = ['北','南','東','西','中','上','下','新','舊','海','山','河','湖','冰','沙','森','原','谷','港','關'];
 const NAME_B = ['京','城','港','灣','原','嶺','谷','要塞','鎮','郡','州','島','口','關','壩','丘','川','澤','壘','站'];
 function makeNodeName(n){
-  const a = NAME_A[Math.floor(rnd(n.wx*0.31+n.wy*0.77)*NAME_A.length)];
-  const b = NAME_B[Math.floor(rnd(n.wy*0.53+n.wx*0.19)*NAME_B.length)];
+  const a = NAME_A[Math.floor(Math.random()*NAME_A.length)];
+  const b = NAME_B[Math.floor(Math.random()*NAME_B.length)];
   return a+b;
 }
 
@@ -299,18 +454,17 @@ function makeNodeName(n){
    新遊戲
    ============================================================ */
 function newGame(){
-  const {nodes, adj} = buildMap();
+  const {nodes, adj, land} = buildMap();
   state = {
     tick:0,
     res:{player:160, ai1:160, ai2:160},
-    nodes, adj,
+    nodes, adj, land,
     armies:[],
     nextArmyId:1,
     capitals:{},
     supply:{player:new Set(), ai1:new Set(), ai2:new Set()},
     selArmy:null, selNode:null,
     gameOver:null,
-    logMark:0,
   };
   logLines = [];
   assignFactions();
@@ -323,7 +477,7 @@ function newGame(){
 function nearestNode(nx, ny){
   let bi=0, bd=Infinity;
   state.nodes.forEach((n,i)=>{
-    const d = (n.wx/WORLD-nx)**2 + ((n.wy/WORLD-ny)*1.1)**2;
+    const d = (n.wx/WORLD-nx)**2 + (n.wy/WORLD-ny)**2;
     if(d<bd){ bd=d; bi=i; }
   });
   return bi;
@@ -332,18 +486,15 @@ function nearestNode(nx, ny){
 function assignFactions(){
   const s = state;
   const seeds = {
-    player: nearestNode(0.17,0.28),
-    ai1: nearestNode(0.49,0.24),
-    ai2: nearestNode(0.72,0.30),
+    player: nearestNode(0.18, 0.32),
+    ai1: nearestNode(0.50, 0.22),
+    ai2: nearestNode(0.75, 0.28),
   };
-  // 避免重疊
   const used = new Set();
   for(const f of PLAYABLE){
     let idx = seeds[f];
     if(used.has(idx)){
-      for(const nb of s.adj[idx]){
-        if(!used.has(nb)){ idx = nb; break; }
-      }
+      for(const nb of s.adj[idx]){ if(!used.has(nb)){ idx = nb; break; } }
     }
     used.add(idx);
     s.capitals[f] = idx;
@@ -354,7 +505,6 @@ function assignFactions(){
     s.nodes[cap].income = Math.max(s.nodes[cap].income, 6);
     for(const nb of s.adj[cap]) s.nodes[nb].owner = f;
   }
-  // 初始部隊
   for(const f of PLAYABLE){
     const cap = s.capitals[f];
     createArmy(f, cap, {rifle:6, mg:2, mbt:1}, FAC_NAME[f]+'第1連');
@@ -363,7 +513,7 @@ function assignFactions(){
 
 function updateCameraToPlayer(){
   const cap = state.nodes[state.capitals.player];
-  cam.x = cap.wx; cam.y = cap.wy; cam.zoom = 0.55;
+  cam.x = cap.wx; cam.y = cap.wy; cam.zoom = 1.1;
 }
 
 /* ============================================================
@@ -460,14 +610,13 @@ function isSupplied(a){
 }
 
 /* ============================================================
-   主 Tick
+   Tick
    ============================================================ */
 function doTick(){
   const s = state;
   if(!s || s.gameOver) return;
   s.tick++;
 
-  // 1. 移動
   for(const a of s.armies){
     if(a.from==null) continue;
     const spd = SPEED_BASE / (1 + armyValue(a)/420);
@@ -477,7 +626,6 @@ function doTick(){
     }
   }
 
-  // 2. 佔領
   for(const nd of s.nodes){
     const arr = s.armies.filter(a=>a.from==null && a.node===nd.id);
     if(!arr.length) continue;
@@ -493,10 +641,8 @@ function doTick(){
     }
   }
 
-  // 3. 戰鬥
   resolveCombat();
 
-  // 4. 補給 + 收入
   s.supply = computeSupply();
   for(const f of PLAYABLE){
     let inc = 0;
@@ -506,18 +652,15 @@ function doTick(){
     s.res[f] += inc;
   }
 
-  // 5. AI
   if(s.tick % 3 === 0){ aiTurn('ai1'); aiTurn('ai2'); }
   if(s.tick % 9 === 0){ aiMove('ai1'); aiMove('ai2'); }
 
-  // 6. 勝負
   checkEnd();
-
   if(s.tick % 10 === 0) saveGame();
 }
 
 /* ============================================================
-   戰鬥結算
+   戰鬥
    ============================================================ */
 function resolveCombat(){
   const s = state;
@@ -533,10 +676,8 @@ function resolveCombat(){
     const nd = s.nodes[nid];
     const groups = {};
     for(const a of arr) (groups[a.faction] ||= []).push(a);
-
     const compOf = {};
     for(const f of facs) compOf[f] = mergeCompList(groups[f]);
-
     const dmg = {};
     for(const f of facs) dmg[f] = 0;
     for(const f of facs){
@@ -549,7 +690,6 @@ function resolveCombat(){
         dmg[g] += atk;
       }
     }
-
     for(const f of facs){
       const d = dmg[f] * DMG_K;
       if(d <= 0) continue;
@@ -560,7 +700,6 @@ function resolveCombat(){
       }
     }
   }
-  // 清理空軍隊
   const before = s.armies.length;
   s.armies = s.armies.filter(a=>Object.keys(a.eq).length>0);
   if(s.armies.length !== before){
@@ -576,7 +715,6 @@ function aiTurn(f){
   const mine = s.armies.filter(a=>a.faction===f);
   const res = s.res[f];
   const myNodes = s.nodes.filter(n=>n.owner===f);
-
   if(!myNodes.length) return;
 
   if(mine.length < 3 && res >= 190){
@@ -587,7 +725,6 @@ function aiTurn(f){
       FAC_NAME[f]+'·新編');
     return;
   }
-
   if(mine.length){
     const target = mine.reduce((a,b)=>armyValue(a)<armyValue(b)?a:b);
     const pool = f==='ai1'
@@ -605,11 +742,9 @@ function aiMove(f){
   const s = state;
   const mine = s.armies.filter(a=>a.faction===f && a.from==null);
   if(!mine.length) return;
-  // 選戰鬥力最強的軍隊進攻
   const a = mine.reduce((x,y)=>armyValue(x)>armyValue(y)?x:y);
   const nbs = s.adj[a.node].filter(j=>s.nodes[j].owner!==f);
   if(!nbs.length) return;
-  // 優先攻打中立、低收入的目標
   nbs.sort((x,y)=>{
     const nx=s.nodes[x], ny=s.nodes[y];
     const ex = nx.owner==='neutral'?0:1;
@@ -639,6 +774,7 @@ function checkEnd(){
 /* ============================================================
    存檔
    ============================================================ */
+const SAVE_KEY = 'wf_save_v2';
 function saveGame(){
   try{
     const s = state;
@@ -648,13 +784,12 @@ function saveGame(){
       armies:s.armies, nextArmyId:s.nextArmyId,
       capitals:s.capitals, gameOver:s.gameOver
     };
-    localStorage.setItem('wf_save_v1', JSON.stringify(data));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){}
 }
-
 function loadGame(){
   try{
-    const raw = localStorage.getItem('wf_save_v1');
+    const raw = localStorage.getItem(SAVE_KEY);
     if(!raw) return false;
     const d = JSON.parse(raw);
     if(!d || !d.nodes || d.nodes.length===0) return false;
@@ -662,10 +797,10 @@ function loadGame(){
       tick:d.tick, res:d.res, nodes:d.nodes, adj:d.adj,
       armies:d.armies, nextArmyId:d.nextArmyId,
       capitals:d.capitals,
+      land:buildLand(),
       supply:{player:new Set(), ai1:new Set(), ai2:new Set()},
       selArmy:null, selNode:null,
       gameOver:d.gameOver || null,
-      logMark:0
     };
     logLines = [];
     computeSupply();
@@ -680,35 +815,56 @@ function loadGame(){
    ============================================================ */
 function render(){
   const s = state;
-  ctx.fillStyle = '#060a0f';
+  ctx.fillStyle = '#050b12';
   ctx.fillRect(0,0,VW,VH);
   if(!s) return;
 
   const z = cam.zoom;
 
-  // ---- 海面網格 ----
-  ctx.strokeStyle = 'rgba(30,55,80,0.30)';
+  // 海洋網格
+  ctx.strokeStyle = 'rgba(30,55,80,0.28)';
   ctx.lineWidth = 1;
-  const step = 400;
+  const step = 250;
   const [wx0,wy0] = s2w(0,0);
   const [wx1,wy1] = s2w(VW,VH);
   ctx.beginPath();
   for(let x=Math.floor(wx0/step)*step; x<wx1; x+=step){
     const [sx] = w2s(x,0);
+    if(sx<0||sx>VW) continue;
     ctx.moveTo(sx,0); ctx.lineTo(sx,VH);
   }
   for(let y=Math.floor(wy0/step)*step; y<wy1; y+=step){
     const [,sy] = w2s(0,y);
+    if(sy<0||sy>VH) continue;
     ctx.moveTo(0,sy); ctx.lineTo(VW,sy);
   }
   ctx.stroke();
 
-  // ---- 連線 ----
+  // 陸地
+  for(const poly of s.land){
+    const b = poly.bbox;
+    const [x0,y0] = w2s(b.minX,b.minY);
+    const [x1,y1] = w2s(b.maxX,b.maxY);
+    if(x1<0||y1<0||x0>VW||y0>VH) continue;
+    ctx.beginPath();
+    poly.pts.forEach(([x,y],i)=>{
+      const [sx,sy] = w2s(x,y);
+      if(i===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
+    });
+    ctx.closePath();
+    ctx.fillStyle = '#16241e';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(90,140,110,0.55)';
+    ctx.lineWidth = Math.max(0.6, 1.3*z);
+    ctx.stroke();
+  }
+
+  // 連線
   ctx.lineWidth = Math.max(0.6, 2*z);
   for(let i=0;i<s.nodes.length;i++){
     const a = s.nodes[i];
     const [ax,ay] = w2s(a.wx,a.wy);
-    if(ax<-60||ax>VW+60||ay<-60||ay>VH+60) continue;
+    if(ax<-40||ax>VW+40||ay<-40||ay>VH+40) continue;
     for(const j of s.adj[i]){
       if(j < i) continue;
       const b = s.nodes[j];
@@ -716,17 +872,14 @@ function render(){
       const same = a.owner===b.owner && a.owner!=='neutral';
       const fed = same && s.supply[a.owner] && s.supply[a.owner].has(i) && s.supply[a.owner].has(j);
       ctx.strokeStyle = same
-        ? (fed ? hexA(FAC_COLOR[a.owner],0.55) : hexA(FAC_COLOR[a.owner],0.20))
-        : 'rgba(70,90,110,0.30)';
+        ? (fed ? hexA(FAC_COLOR[a.owner],0.55) : hexA(FAC_COLOR[a.owner],0.22))
+        : 'rgba(70,90,110,0.35)';
       ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
     }
   }
 
-  // ---- 節點 ----
-  const R = Math.max(3, 24*z);
-  const selNode = s.selNode;
-
-  // 選中部隊的可移動目標高亮
+  // 節點
+  const R = Math.max(2.2, 14*z);
   const moveSet = new Set();
   if(s.selArmy){
     const a = s.armies.find(x=>x.id===s.selArmy);
@@ -735,52 +888,40 @@ function render(){
 
   for(const nd of s.nodes){
     const [x,y] = w2s(nd.wx, nd.wy);
-    if(x<-50||x>VW+50||y<-50||y>VH+50) continue;
-
+    if(x<-30||x>VW+30||y<-30||y>VH+30) continue;
     const col = FAC_COLOR[nd.owner];
     const supplied = nd.owner!=='neutral' && s.supply[nd.owner] && s.supply[nd.owner].has(nd.id);
 
     if(moveSet.has(nd.id)){
-      ctx.beginPath(); ctx.arc(x,y,R+7,0,Math.PI*2);
+      ctx.beginPath(); ctx.arc(x,y,R+5,0,Math.PI*2);
       ctx.strokeStyle = 'rgba(110,220,150,0.85)';
-      ctx.lineWidth = 2; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.lineWidth = 1.8; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // 光暈
     if(nd.owner!=='neutral'){
-      const g = ctx.createRadialGradient(x,y,R*0.3,x,y,R*2.4);
+      const g = ctx.createRadialGradient(x,y,R*0.2,x,y,R*2.0);
       g.addColorStop(0, hexA(col, supplied?0.30:0.12));
       g.addColorStop(1, hexA(col,0));
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x,y,R*2.4,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,R*2.0,0,Math.PI*2); ctx.fill();
     }
 
-    // 本體
     ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2);
-    ctx.fillStyle = nd.owner==='neutral' ? '#141d26' : hexA(col, supplied?0.90:0.42);
+    ctx.fillStyle = nd.owner==='neutral' ? '#0f1720' : hexA(col, supplied?0.95:0.45);
     ctx.fill();
-    ctx.lineWidth = nd.id===selNode ? 3 : Math.max(1, 1.6*z);
-    ctx.strokeStyle = nd.id===selNode ? '#ffffff' : (nd.owner==='neutral' ? '#2b3946' : col);
+    ctx.lineWidth = nd.id===s.selNode ? 2.4 : Math.max(0.8, 1.3*z);
+    ctx.strokeStyle = nd.id===s.selNode ? '#ffffff' : (nd.owner==='neutral' ? '#2b3946' : col);
     ctx.stroke();
 
-    // 地形標記
-    if(z > 0.32){
-      ctx.fillStyle = 'rgba(255,255,255,'+(supplied?0.75:0.35)+')';
-      ctx.font = Math.max(8, 11*z)+'px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const mark = {city:'■', mountain:'▲', coast:'~', plain:'·'}[nd.terrain];
-      ctx.fillText(mark, x, y+0.5);
-    }
-    // 名稱
     if(z > 0.55){
-      ctx.fillStyle = 'rgba(200,220,240,0.82)';
-      ctx.font = Math.max(9, 11*z)+'px "Microsoft JhengHei",sans-serif';
+      ctx.fillStyle = 'rgba(200,220,240,0.85)';
+      ctx.font = Math.max(8, 10*z)+'px "Microsoft JhengHei",sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillText(nd.name, x, y+R+3);
+      ctx.fillText(nd.name, x, y+R+2);
     }
   }
 
-  // ---- 軍隊 ----
+  // 軍隊
   const nodeArmies = {};
   for(const a of s.armies){
     if(a.from==null) (nodeArmies[a.node] ||= []).push(a);
@@ -792,35 +933,32 @@ function render(){
     const cnt = list.length;
     list.forEach((a,i)=>{
       const ang = -Math.PI/2 + (i - (cnt-1)/2) * 0.72;
-      const rad = R + Math.max(9, 16*z);
+      const rad = R + Math.max(7, 13*z);
       const x = nx + Math.cos(ang)*rad;
       const y = ny + Math.sin(ang)*rad;
       drawArmyToken(a, x, y, z, a.id===s.selArmy);
     });
   }
-  // 移動中的軍隊
   for(const a of s.armies){
     if(a.from==null) continue;
     const [wx,wy] = armyPos(a);
     const [x,y] = w2s(wx,wy);
     drawArmyToken(a, x, y, z, a.id===s.selArmy);
-    // 行進線
     const A = s.nodes[a.from], B = s.nodes[a.to];
     const [ax,ay] = w2s(A.wx,A.wy);
     const [bx,by] = w2s(B.wx,B.wy);
     ctx.strokeStyle = hexA(FAC_COLOR[a.faction],0.55);
-    ctx.lineWidth = 2; ctx.setLineDash([5,4]);
+    ctx.lineWidth = 1.8; ctx.setLineDash([4,3]);
     ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  // ---- 小地圖 ----
   drawMinimap();
 }
 
 function drawArmyToken(a, x, y, z, selected){
   const col = FAC_COLOR[a.faction];
-  const sz = Math.max(5, 9*z + Math.min(9, armyUnits(a)*0.35*z));
+  const sz = Math.max(3.5, 7*z + Math.min(6, armyUnits(a)*0.3*z));
   ctx.save();
   ctx.translate(x,y);
   ctx.beginPath();
@@ -830,43 +968,54 @@ function drawArmyToken(a, x, y, z, selected){
   ctx.globalAlpha = 0.95;
   ctx.fill();
   ctx.globalAlpha = 1;
-  ctx.lineWidth = selected ? 2.4 : 1;
+  ctx.lineWidth = selected ? 2.2 : 0.9;
   ctx.strokeStyle = selected ? '#ffffff' : '#0a1016';
   ctx.stroke();
-  // 空虛提示：補給中斷
   if(!isSupplied(a) && a.from==null){
     ctx.beginPath(); ctx.arc(0,0,sz*1.7,0,Math.PI*2);
     ctx.strokeStyle = 'rgba(255,90,90,0.75)';
-    ctx.lineWidth = 1.4; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineWidth = 1.2; ctx.setLineDash([2,2]); ctx.stroke(); ctx.setLineDash([]);
   }
   ctx.restore();
 }
 
 function drawMinimap(){
-  const W = Math.min(190, VW*0.24);
-  const H = W;
+  const W = Math.min(180, VW*0.22);
+  const H = Math.round(W * 0.62);
   const pad = 12;
   const ox = VW - W - pad, oy = VH - H - pad;
   const sc = W / WORLD;
 
   ctx.save();
   ctx.globalAlpha = 0.92;
-  ctx.fillStyle = 'rgba(8,14,20,0.90)';
+  ctx.fillStyle = 'rgba(8,14,20,0.9)';
   ctx.fillRect(ox,oy,W,H);
   ctx.strokeStyle = '#22313f';
   ctx.lineWidth = 1;
   ctx.strokeRect(ox+0.5,oy+0.5,W-1,H-1);
+
+  // 陸地輪廓
+  for(const poly of state.land){
+    ctx.beginPath();
+    poly.pts.forEach(([x,y],i)=>{
+      const sx = ox + x*sc;
+      const sy = oy + y*sc;
+      if(i===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
+    });
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(30,60,45,0.75)';
+    ctx.fill();
+  }
 
   for(const nd of state.nodes){
     const x = ox + nd.wx*sc;
     const y = oy + nd.wy*sc;
     ctx.fillStyle = FAC_COLOR[nd.owner];
     ctx.globalAlpha = nd.owner==='neutral' ? 0.35 : 0.9;
-    ctx.fillRect(x-1.2, y-1.2, 2.4, 2.4);
+    ctx.fillRect(x-1, y-1, 2, 2);
   }
   ctx.globalAlpha = 1;
 
-  // 視野框
   const [vx0,vy0] = s2w(0,0);
   const [vx1,vy1] = s2w(VW,VH);
   ctx.strokeStyle = '#7cc4ff';
@@ -875,19 +1024,14 @@ function drawMinimap(){
   ctx.restore();
 }
 
-function hexA(hex, a){
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-
 /* ============================================================
-   互動：相機拖動 / 縮放 / 點擊
+   互動：滑鼠
    ============================================================ */
+let lastTouchTime = 0;
 let drag = null;
 
 cv.addEventListener('mousedown', e=>{
+  if(Date.now() - lastTouchTime < 700) return;
   if(e.button===2) return;
   const r = cv.getBoundingClientRect();
   drag = {sx:e.clientX-r.left, sy:e.clientY-r.top, cx:cam.x, cy:cam.y, moved:false};
@@ -904,12 +1048,10 @@ window.addEventListener('mousemove', e=>{
     cam.y = drag.cy - dy/cam.zoom;
   }
 });
-window.addEventListener('mouseup', e=>{
+window.addEventListener('mouseup', ()=>{
   if(!drag) return;
   cv.classList.remove('drag');
-  if(!drag.moved){
-    handleClick(drag.sx, drag.sy);
-  }
+  if(!drag.moved) handleClick(drag.sx, drag.sy);
   drag = null;
 });
 cv.addEventListener('contextmenu', e=>{
@@ -922,18 +1064,121 @@ cv.addEventListener('wheel', e=>{
   const sx = e.clientX-r.left, sy = e.clientY-r.top;
   const [wx,wy] = s2w(sx,sy);
   const factor = e.deltaY < 0 ? 1.14 : 1/1.14;
-  cam.zoom = clamp(cam.zoom*factor, 0.12, 2.8);
+  cam.zoom = clamp(cam.zoom*factor, ZMIN, ZMAX);
   const [nx,ny] = s2w(sx,sy);
   cam.x += wx-nx;
   cam.y += wy-ny;
 }, {passive:false});
 
+/* ============================================================
+   互動：觸控（單指拖動、雙指縮放、輕點）
+   ============================================================ */
+let touch = null;
+
+function tPos(t){
+  const r = cv.getBoundingClientRect();
+  return [t.clientX - r.left, t.clientY - r.top];
+}
+
+cv.addEventListener('touchstart', e=>{
+  lastTouchTime = Date.now();
+  e.preventDefault();
+  if(e.touches.length === 1){
+    const [x,y] = tPos(e.touches[0]);
+    touch = {mode:'drag', sx:x, sy:y, cx:cam.x, cy:cam.y, moved:false};
+  } else if(e.touches.length === 2){
+    const [x1,y1] = tPos(e.touches[0]);
+    const [x2,y2] = tPos(e.touches[1]);
+    touch = {
+      mode:'pinch',
+      lastDist: Math.hypot(x2-x1, y2-y1),
+      lastMidX: (x1+x2)/2,
+      lastMidY: (y1+y2)/2,
+    };
+  }
+}, {passive:false});
+
+cv.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(!touch) return;
+
+  if(touch.mode === 'drag' && e.touches.length === 1){
+    const [x,y] = tPos(e.touches[0]);
+    const dx = x - touch.sx;
+    const dy = y - touch.sy;
+    if(Math.abs(dx)+Math.abs(dy) > 5) touch.moved = true;
+    if(touch.moved){
+      cam.x = touch.cx - dx/cam.zoom;
+      cam.y = touch.cy - dy/cam.zoom;
+    }
+    return;
+  }
+
+  if(touch.mode === 'pinch' && e.touches.length === 2){
+    const [x1,y1] = tPos(e.touches[0]);
+    const [x2,y2] = tPos(e.touches[1]);
+    const dist = Math.hypot(x2-x1, y2-y1);
+    const midX = (x1+x2)/2;
+    const midY = (y1+y2)/2;
+
+    if(touch.lastDist > 0 && dist > 0){
+      const scale = dist / touch.lastDist;
+      const newZoom = clamp(cam.zoom * scale, ZMIN, ZMAX);
+
+      // 以兩指中點為錨點縮放
+      const [wx, wy] = s2w(midX, midY);
+      cam.zoom = newZoom;
+      const [nx, ny] = s2w(midX, midY);
+      cam.x += wx - nx;
+      cam.y += wy - ny;
+
+      // 處理中點平移
+      const dmx = midX - touch.lastMidX;
+      const dmy = midY - touch.lastMidY;
+      cam.x -= dmx / cam.zoom;
+      cam.y -= dmy / cam.zoom;
+    }
+
+    touch.lastDist = dist;
+    touch.lastMidX = midX;
+    touch.lastMidY = midY;
+  }
+}, {passive:false});
+
+cv.addEventListener('touchend', e=>{
+  e.preventDefault();
+  if(!touch) return;
+
+  if(touch.mode === 'drag' && !touch.moved){
+    handleClick(touch.sx, touch.sy);
+  }
+
+  if(e.touches.length === 1 && touch.mode === 'pinch'){
+    const [x,y] = tPos(e.touches[0]);
+    touch = {mode:'drag', sx:x, sy:y, cx:cam.x, cy:cam.y, moved:true};
+  } else if(e.touches.length === 0){
+    touch = null;
+  }
+}, {passive:false});
+
+cv.addEventListener('touchcancel', e=>{
+  e.preventDefault();
+  touch = null;
+}, {passive:false});
+
+// 阻止 Safari 的手勢縮放
+document.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
+document.addEventListener('gesturechange', e=>e.preventDefault(), {passive:false});
+document.addEventListener('gestureend', e=>e.preventDefault(), {passive:false});
+
+/* ============================================================
+   點擊處理
+   ============================================================ */
 function handleClick(sx, sy){
   const s = state;
   if(!s) return;
 
-  // 1. 找最近軍隊
-  let hitArmy = null, bestD = 26;
+  let hitArmy = null, bestD = 22;
   for(const a of s.armies){
     const [wx,wy] = armyPos(a);
     const [x,y] = w2s(wx,wy);
@@ -941,20 +1186,17 @@ function handleClick(sx, sy){
     if(d < bestD){ bestD = d; hitArmy = a; }
   }
 
-  // 2. 找最近節點
   let hitNode = null, nd2 = Infinity;
   for(const nd of s.nodes){
     const [x,y] = w2s(nd.wx, nd.wy);
     const d = Math.hypot(x-sx, y-sy);
-    const R = Math.max(10, 26*cam.zoom);
+    const R = Math.max(9, 18*cam.zoom);
     if(d < R && d < nd2){ nd2 = d; hitNode = nd; }
   }
 
   const sel = s.selArmy ? s.armies.find(a=>a.id===s.selArmy) : null;
 
-  // 點軍隊
   if(hitArmy){
-    // 合併：選中己方 → 點另一支同節點己方
     if(sel && hitArmy.id !== sel.id && sel.faction===hitArmy.faction
        && sel.faction==='player'
        && sel.from==null && hitArmy.from==null && sel.node===hitArmy.node){
@@ -967,9 +1209,7 @@ function handleClick(sx, sy){
     return;
   }
 
-  // 點節點
   if(hitNode){
-    // 選中部隊 → 移動
     if(sel && sel.faction==='player' && sel.from==null && s.adj[sel.node].includes(hitNode.id)){
       sel.from = sel.node;
       sel.to = hitNode.id;
@@ -985,35 +1225,35 @@ function handleClick(sx, sy){
     return;
   }
 
-  // 空地
   s.selArmy = null; s.selNode = null;
   rebuildSidebar();
 }
 
 function mergeArmies(a, b){
-  for(const k in b.eq){
-    a.eq[k] = (a.eq[k]||0) + b.eq[k];
-  }
+  for(const k in b.eq) a.eq[k] = (a.eq[k]||0) + b.eq[k];
   state.armies = state.armies.filter(x=>x.id!==b.id);
   log(`「${b.name}」併入「${a.name}」。`, 'good');
   rebuildSidebar();
 }
 
 /* ============================================================
-   側邊欄 UI
+   側欄 UI
    ============================================================ */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function rebuildSidebar(){
   const s = state;
   if(!s) return;
 
-  // 軍隊列表
   const mine = s.armies.filter(a=>a.faction==='player');
   $('armyList').innerHTML = mine.length
     ? mine.map(a=>{
         const units = armyUnits(a);
         const loc = a.from==null ? s.nodes[a.node].name : '移動中';
         const supplyBad = a.from==null && !isSupplied(a) ? ' ⚠' : '';
-        return `<div class="army-item ${a.id===s.selArmy?'sel':''}" onclick="selectArmy(${a.id})">
+        return `<div class="army-item ${a.id===s.selArmy?'sel':''}" data-army="${a.id}">
           <span class="fac" style="background:${FAC_COLOR[a.faction]}"></span>
           <span class="nm">${escapeHtml(a.name)}</span>
           <span class="sz">${units}件 · ${loc}${supplyBad}</span>
@@ -1021,7 +1261,6 @@ function rebuildSidebar(){
       }).join('')
     : '<div style="color:#5a6b7b;font-size:11px">尚無部隊，請先佔領節點以獲得收入。</div>';
 
-  // 選中面板
   const sel = s.selArmy ? s.armies.find(a=>a.id===s.selArmy) : null;
   const selN = s.selNode!=null ? s.nodes[s.selNode] : null;
 
@@ -1031,8 +1270,8 @@ function rebuildSidebar(){
       return `<div class="eq-row">
         <span class="eq-name">${e.name}</span>
         <span class="eq-cnt">×${sel.eq[k]}</span>
-        <button class="mini" onclick="splitOne(${sel.id},'${k}')">拆1</button>
-        <button class="mini" onclick="sellOne(${sel.id},'${k}')">賣</button>
+        <button class="mini" data-splitone="${sel.id}:${k}">拆1</button>
+        <button class="mini" data-sellone="${sel.id}:${k}">賣</button>
       </div>`;
     }).join('') || '<div style="color:#5a6b7b;font-size:11px">空部隊</div>';
 
@@ -1042,7 +1281,7 @@ function rebuildSidebar(){
       : '<span class="tag">行軍中</span>';
 
     $('selPanel').innerHTML = `
-      <div class="row"><b>${escapeHtml(sel.name)}</b><button class="mini" onclick="renameArmy(${sel.id})">改名</button></div>
+      <div class="row"><b>${escapeHtml(sel.name)}</b><button class="mini" data-rename="${sel.id}">改名</button></div>
       <div class="row" style="font-size:11px;color:#7d93a8">
         <span>位置：${loc}</span>${supplyTxt}
       </div>
@@ -1052,7 +1291,7 @@ function rebuildSidebar(){
       </div>
       <div style="margin-top:6px;border-top:1px solid #16202b;padding-top:5px">${eqRows}</div>
       <div class="row" style="margin-top:7px">
-        <button class="mini" onclick="splitAll(${sel.id})">全部拆出新部隊</button>
+        <button class="mini" data-splitall="${sel.id}">全部拆出新部隊</button>
       </div>
     `;
   } else if(selN){
@@ -1066,33 +1305,72 @@ function rebuildSidebar(){
           <span style="color:#7d93a8">${armyUnits(a)}件</span>
         </div>`).join('')
       : '<div style="color:#5a6b7b;font-size:11px">無駐軍</div>';
-
     $('selPanel').innerHTML = `
       <div class="row"><b>${selN.name}</b>${ownerTag}</div>
       <div class="row" style="font-size:11px;color:#7d93a8"><span>地形：${terrName}</span><span>收入：${selN.income}/tick</span></div>
       <div class="row" style="font-size:11px;color:#7d93a8"><span>防禦加成：${(selN.defBonus*100).toFixed(0)}%</span></div>
       <div style="margin-top:6px;border-top:1px solid #16202b;padding-top:5px">${listHtml}</div>
-      ${selN.owner==='player' ? `<div class="row" style="margin-top:7px"><button class="mini pri" onclick="newArmyHere(${selN.id})">在此新建部隊</button></div>` : ''}
+      ${selN.owner==='player' ? `<div class="row" style="margin-top:7px"><button class="mini pri" data-newarmy="${selN.id}">在此新建部隊</button></div>` : ''}
     `;
   } else {
     $('selPanel').innerHTML = '<div style="color:#5a6b7b;font-size:11px">點擊地圖上的軍隊或節點。</div>';
   }
 
-  // 兵工廠
-  $('shop').innerHTML = EQ_KEYS.map(k=>{
-    const e = EQ[k];
-    const can = sel && sel.faction==='player' && s.res.player >= e.cost;
-    return `<button class="shop-btn ${can?'':'dis'}" onclick="buyEq('${k}')">
-      <span class="n">${e.name}</span><span class="c">${e.cost}</span>
-    </button>`;
-  }).join('');
-
+  updateShopState();
   updateTopbar();
 }
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* ---- 兵工廠：一次性構建 + 事件委托 ---- */
+function buildShopOnce(){
+  const shop = $('shop');
+  shop.innerHTML = EQ_KEYS.map(k=>{
+    const e = EQ[k];
+    return `<button class="shop-btn" data-eq="${k}">
+      <span class="n">${e.name}</span><span class="c">${e.cost}</span>
+    </button>`;
+  }).join('');
+  shop.addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-eq]');
+    if(!btn || btn.classList.contains('dis')) return;
+    buyEq(btn.dataset.eq);
+  });
 }
+
+function updateShopState(){
+  const s = state;
+  if(!s) return;
+  const shop = $('shop');
+  if(!shop || shop.children.length === 0) return;
+  const a = s.selArmy ? s.armies.find(x=>x.id===s.selArmy) : null;
+  for(const btn of shop.children){
+    const e = EQ[btn.dataset.eq];
+    const can = a && a.faction==='player' && a.from==null && s.res.player >= e.cost;
+    btn.classList.toggle('dis', !can);
+  }
+}
+
+/* 側欄事件委托（軍隊列表與選中面板） */
+document.getElementById('sidebar').addEventListener('click', e=>{
+  const t = e.target;
+  const armyItem = t.closest('[data-army]');
+  if(armyItem){ selectArmy(parseInt(armyItem.dataset.army,10)); return; }
+  const rn = t.closest('[data-rename]');
+  if(rn){ renameArmy(parseInt(rn.dataset.rename,10)); return; }
+  const so = t.closest('[data-splitone]');
+  if(so){
+    const [id,k] = so.dataset.splitone.split(':');
+    splitOne(parseInt(id,10), k); return;
+  }
+  const sl = t.closest('[data-sellone]');
+  if(sl){
+    const [id,k] = sl.dataset.sellone.split(':');
+    sellOne(parseInt(id,10), k); return;
+  }
+  const sa = t.closest('[data-splitall]');
+  if(sa){ splitAll(parseInt(sa.dataset.splitall,10)); return; }
+  const na = t.closest('[data-newarmy]');
+  if(na){ newArmyHere(parseInt(na.dataset.newarmy,10)); return; }
+});
 
 function updateTopbar(){
   const s = state;
@@ -1111,18 +1389,28 @@ function updateTopbar(){
 /* ============================================================
    UI 動作
    ============================================================ */
-window.selectArmy = function(id){
+function selectArmy(id){
   state.selArmy = id; state.selNode = null; rebuildSidebar();
-};
+}
 
-window.renameArmy = function(id){
+function renameArmy(id){
   const a = state.armies.find(x=>x.id===id);
   if(!a) return;
   const n = prompt('輸入部隊名稱：', a.name);
   if(n && n.trim()){ a.name = n.trim().slice(0,24); rebuildSidebar(); }
-};
+}
 
-window.buyEq = function(k){
+let _uiRefreshPending = false;
+function scheduleUIRefresh(){
+  if(_uiRefreshPending) return;
+  _uiRefreshPending = true;
+  requestAnimationFrame(()=>{
+    _uiRefreshPending = false;
+    rebuildSidebar();
+  });
+}
+
+function buyEq(k){
   const s = state;
   const a = s.selArmy ? s.armies.find(x=>x.id===s.selArmy) : null;
   if(!a || a.faction!=='player'){ log('請先選中一支己方部隊。','warn'); return; }
@@ -1131,10 +1419,12 @@ window.buyEq = function(k){
   if(s.res.player < cost){ log('資源不足。','warn'); return; }
   s.res.player -= cost;
   a.eq[k] = (a.eq[k]||0)+1;
-  rebuildSidebar();
-};
+  updateShopState();
+  updateTopbar();
+  scheduleUIRefresh();
+}
 
-window.sellOne = function(id, k){
+function sellOne(id, k){
   const a = state.armies.find(x=>x.id===id);
   if(!a || !a.eq[k]) return;
   a.eq[k]--;
@@ -1142,9 +1432,9 @@ window.sellOne = function(id, k){
   state.res.player += Math.floor(EQ[k].cost*0.5);
   if(!Object.keys(a.eq).length) state.armies = state.armies.filter(x=>x.id!==id);
   rebuildSidebar();
-};
+}
 
-window.splitOne = function(id, k){
+function splitOne(id, k){
   const s = state;
   const a = s.armies.find(x=>x.id===id);
   if(!a || !a.eq[k] || a.from!=null) return;
@@ -1155,9 +1445,9 @@ window.splitOne = function(id, k){
   s.selArmy = na.id;
   log(`從「${a.name}」拆出「${na.name}」。`);
   rebuildSidebar();
-};
+}
 
-window.splitAll = function(id){
+function splitAll(id){
   const s = state;
   const a = s.armies.find(x=>x.id===id);
   if(!a || a.from!=null) return;
@@ -1173,19 +1463,19 @@ window.splitAll = function(id){
   s.selArmy = na.id;
   log(`「${a.name}」拆出一半兵力成「${na.name}」。`);
   rebuildSidebar();
-};
+}
 
-window.newArmyHere = function(nodeId){
+function newArmyHere(nodeId){
   const s = state;
   const nd = s.nodes[nodeId];
-  if(nd.owner !== 'player'){ return; }
+  if(nd.owner !== 'player') return;
   if(s.res.player < 40){ log('資源不足（需 40）。','warn'); return; }
   s.res.player -= 40;
   const na = createArmy('player', nodeId, {rifle:3, mg:1}, '新編連隊');
   s.selArmy = na.id;
   log(`在 ${nd.name} 組建「${na.name}」。`,'good');
   rebuildSidebar();
-};
+}
 
 /* ============================================================
    主循環
@@ -1208,8 +1498,7 @@ function loop(ts){
   }
   render();
 
-  // 每 tick 刷新一次側欄數字（低成本）
-  if(!loop._lastUi || Date.now() - loop._lastUi > 400){
+  if(!loop._lastUi || Date.now() - loop._lastUi > 1000){
     loop._lastUi = Date.now();
     if(state) rebuildSidebar();
   }
@@ -1224,7 +1513,7 @@ $('btnPause').addEventListener('click', ()=>{
   updateTopbar();
 });
 $('btnNew').addEventListener('click', ()=>{
-  if(!confirm('開始新遊戲？目前進度會保存到存檔。')) return;
+  if(!confirm('開始新遊戲？')) return;
   newGame();
   rebuildSidebar();
   paused = false;
@@ -1236,6 +1525,7 @@ $('btnNew').addEventListener('click', ()=>{
    ============================================================ */
 (function boot(){
   resize();
+  buildShopOnce();
   const ok = loadGame();
   if(!ok) newGame();
   rebuildSidebar();
