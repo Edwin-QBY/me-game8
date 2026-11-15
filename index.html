@@ -124,75 +124,74 @@ const FAC_NAME  = {player:'玩家', ai1:'阿爾法', ai2:'貝塔', neutral:'中�
 const PLAYABLE  = ['player','ai1','ai2'];
 
 /* ============================================================
-   精細世界地圖輪廓
+   精細世界地圖輪廓（含海灣、半島與各大洲辨識特徵）
    ============================================================ */
 const LAND_RAW = [
-  // 北美洲
-  {name:'na', pts:[
-    [0.05,0.15], [0.08,0.12], [0.15,0.11], [0.20,0.10], [0.25,0.11], [0.30,0.10], 
-    [0.33,0.14], [0.34,0.20], [0.32,0.25], [0.36,0.28], [0.34,0.33], [0.31,0.37], 
-    [0.32,0.40], [0.29,0.39], [0.27,0.41], [0.24,0.40], [0.21,0.43], [0.18,0.44], 
-    [0.16,0.40], [0.15,0.36], [0.13,0.32], [0.11,0.28], [0.08,0.25], [0.05,0.20]
+  // 北美洲（含阿拉斯加、哈德遜灣、佛羅里達、墨西哥灣、中美地峽）
+  {name:'na', label:'NORTH AMERICA', pts:[
+    [0.03,0.16],[0.07,0.12],[0.12,0.11],[0.16,0.12],[0.19,0.10],[0.24,0.11],[0.27,0.15],
+    [0.29,0.12],[0.32,0.15],[0.35,0.20],[0.32,0.24],[0.29,0.28],[0.28,0.34],[0.27,0.37],
+    [0.25,0.35],[0.22,0.36],[0.21,0.39],[0.23,0.43],[0.21,0.44],[0.18,0.40],[0.15,0.36],
+    [0.14,0.31],[0.12,0.26],[0.09,0.22],[0.05,0.20]
   ]},
   // 格陵蘭
   {name:'gl', pts:[
-    [0.34,0.06], [0.38,0.06], [0.42,0.10], [0.42,0.15], [0.39,0.20], [0.35,0.22], 
-    [0.32,0.18], [0.31,0.12], [0.32,0.08]
+    [0.34,0.06],[0.38,0.05],[0.42,0.09],[0.42,0.15],[0.38,0.20],[0.35,0.21],[0.32,0.17],[0.31,0.11]
   ]},
   // 南美洲
-  {name:'sa', pts:[
-    [0.23,0.45], [0.28,0.44], [0.32,0.47], [0.37,0.50], [0.39,0.54], [0.38,0.60], 
-    [0.36,0.66], [0.34,0.72], [0.31,0.78], [0.28,0.83], [0.26,0.83], [0.25,0.78], 
-    [0.24,0.72], [0.23,0.65], [0.22,0.58], [0.20,0.52]
+  {name:'sa', label:'SOUTH AMERICA', pts:[
+    [0.23,0.45],[0.28,0.44],[0.33,0.47],[0.38,0.52],[0.39,0.58],[0.36,0.65],
+    [0.34,0.72],[0.31,0.79],[0.28,0.85],[0.26,0.85],[0.25,0.78],[0.24,0.71],
+    [0.23,0.64],[0.21,0.56],[0.20,0.50]
   ]},
-  // 歐洲
-  {name:'eu', pts:[
-    [0.44,0.25], [0.43,0.21], [0.46,0.15], [0.50,0.12], [0.54,0.13], [0.54,0.17], 
-    [0.57,0.20], [0.59,0.23], [0.60,0.26], [0.59,0.29], [0.56,0.31], [0.54,0.33], 
-    [0.52,0.30], [0.50,0.31], [0.48,0.29], [0.45,0.29], [0.44,0.26]
+  // 歐洲（含伊比利亞、義大利半島、斯堪地那維亞）
+  {name:'eu', label:'EUROPE', pts:[
+    [0.43,0.27],[0.43,0.24],[0.46,0.22],[0.47,0.17],[0.50,0.11],[0.54,0.11],[0.56,0.15],
+    [0.54,0.18],[0.58,0.18],[0.60,0.23],[0.59,0.28],[0.56,0.30],[0.54,0.32],[0.52,0.30],
+    [0.51,0.33],[0.49,0.30],[0.47,0.30],[0.44,0.31]
   ]},
-  // 非洲
-  {name:'af', pts:[
-    [0.42,0.34], [0.48,0.33], [0.54,0.33], [0.58,0.35], [0.61,0.38], [0.64,0.41], 
-    [0.67,0.45], [0.68,0.50], [0.66,0.56], [0.64,0.62], [0.61,0.68], [0.58,0.73], 
-    [0.55,0.75], [0.52,0.72], [0.50,0.65], [0.48,0.58], [0.45,0.50], [0.42,0.45], 
-    [0.40,0.42], [0.41,0.37]
+  // 非洲（含紅海、索馬利亞之角、幾內亞灣）
+  {name:'af', label:'AFRICA', pts:[
+    [0.42,0.35],[0.47,0.33],[0.53,0.34],[0.57,0.35],[0.60,0.40],[0.64,0.43],[0.66,0.46],
+    [0.64,0.52],[0.62,0.58],[0.60,0.65],[0.57,0.72],[0.54,0.75],[0.51,0.71],[0.49,0.63],
+    [0.48,0.55],[0.46,0.49],[0.42,0.47],[0.40,0.42]
   ]},
-  // 亞洲
-  {name:'as', pts:[
-    [0.60,0.26], [0.61,0.18], [0.68,0.12], [0.75,0.10], [0.82,0.11], [0.88,0.14], 
-    [0.91,0.18], [0.92,0.23], [0.90,0.28], [0.88,0.34], [0.89,0.38], [0.86,0.42], 
-    [0.84,0.47], [0.82,0.52], [0.80,0.55], [0.78,0.54], [0.77,0.50], [0.73,0.52], 
-    [0.70,0.53], [0.68,0.48], [0.67,0.43], [0.64,0.42], [0.60,0.44], [0.58,0.41], 
-    [0.57,0.38], [0.58,0.33], [0.59,0.28]
+  // 亞洲（含阿拉伯半島、印度次大陸、中南半島、堪察加）
+  {name:'as', label:'ASIA', pts:[
+    [0.60,0.25],[0.61,0.16],[0.68,0.11],[0.76,0.09],[0.84,0.11],[0.91,0.14],[0.95,0.17],
+    [0.92,0.22],[0.90,0.27],[0.88,0.32],[0.87,0.38],[0.85,0.43],[0.82,0.48],[0.80,0.54],
+    [0.78,0.53],[0.77,0.47],[0.74,0.48],[0.71,0.53],[0.68,0.47],[0.66,0.43],[0.64,0.44],
+    [0.61,0.43],[0.58,0.38],[0.58,0.33]
   ]},
   // 澳洲
-  {name:'au', pts:[
-    [0.80,0.65], [0.85,0.63], [0.90,0.64], [0.93,0.68], [0.93,0.73], [0.91,0.77], 
-    [0.87,0.78], [0.83,0.77], [0.80,0.74], [0.78,0.70], [0.79,0.67]
+  {name:'au', label:'OCEANIA', pts:[
+    [0.80,0.65],[0.85,0.63],[0.90,0.64],[0.93,0.68],[0.93,0.74],[0.90,0.78],
+    [0.85,0.78],[0.81,0.75],[0.78,0.71]
   ]},
   // 大不列顛
-  {name:'uk', pts:[[0.45,0.18], [0.46,0.17], [0.47,0.20], [0.45,0.22], [0.44,0.20]]},
+  {name:'uk', pts:[[0.44,0.19],[0.46,0.17],[0.47,0.21],[0.45,0.23],[0.44,0.21]]},
   // 愛爾蘭
-  {name:'ie', pts:[[0.42,0.19], [0.43,0.18], [0.43,0.21], [0.42,0.22]]},
+  {name:'ie', pts:[[0.42,0.19],[0.43,0.18],[0.43,0.21],[0.42,0.22]]},
   // 日本
-  {name:'jp', pts:[[0.88,0.28], [0.90,0.27], [0.91,0.32], [0.89,0.36], [0.87,0.34]]},
+  {name:'jp', pts:[[0.89,0.27],[0.91,0.26],[0.92,0.31],[0.90,0.35],[0.88,0.33]]},
+  // 台灣
+  {name:'tw', pts:[[0.85,0.39],[0.86,0.39],[0.86,0.42],[0.85,0.42]]},
   // 馬達加斯加
-  {name:'mg', pts:[[0.64,0.65], [0.66,0.65], [0.67,0.70], [0.64,0.72], [0.63,0.68]]},
+  {name:'mg', pts:[[0.63,0.64],[0.65,0.64],[0.66,0.70],[0.63,0.72],[0.62,0.68]]},
   // 紐西蘭
-  {name:'nz', pts:[[0.93,0.80], [0.95,0.82], [0.94,0.86], [0.92,0.84]]},
+  {name:'nz', pts:[[0.94,0.80],[0.96,0.82],[0.94,0.87],[0.92,0.85]]},
   // 印尼（蘇門答臘）
-  {name:'id1', pts:[[0.74,0.54], [0.79,0.56], [0.78,0.58], [0.73,0.56]]},
+  {name:'id1', pts:[[0.75,0.54],[0.79,0.56],[0.78,0.58],[0.74,0.56]]},
   // 婆羅洲
-  {name:'id2', pts:[[0.79,0.52], [0.84,0.53], [0.83,0.57], [0.78,0.56]]},
+  {name:'id2', pts:[[0.80,0.52],[0.84,0.53],[0.83,0.57],[0.79,0.56]]},
   // 新幾內亞
-  {name:'id3', pts:[[0.85,0.55], [0.90,0.56], [0.89,0.59], [0.84,0.58]]},
+  {name:'id3', pts:[[0.86,0.55],[0.91,0.56],[0.90,0.59],[0.85,0.58]]},
   // 菲律賓
-  {name:'ph', pts:[[0.82,0.44], [0.84,0.46], [0.82,0.49], [0.81,0.47]]},
+  {name:'ph', pts:[[0.83,0.44],[0.85,0.46],[0.84,0.50],[0.82,0.48]]},
   // 斯里蘭卡
-  {name:'lk', pts:[[0.70,0.51], [0.71,0.52], [0.70,0.53], [0.69,0.52]]},
+  {name:'lk', pts:[[0.71,0.52],[0.72,0.53],[0.71,0.55],[0.70,0.53]]},
   // 冰島
-  {name:'is', pts:[[0.37,0.13], [0.39,0.12], [0.40,0.14], [0.38,0.15]]}
+  {name:'is', pts:[[0.37,0.13],[0.39,0.12],[0.40,0.14],[0.38,0.15]]}
 ];
 
 /* ============================================================
@@ -278,13 +277,12 @@ function log(msg, cls){
    地圖生成
    ============================================================ */
 function buildLand(){
-  // 寬度為 WORLD，高度為 0.75 * WORLD（模擬真實經緯度比例）
   const XS = WORLD;
   const YS = WORLD * 0.75;
   const OFFSET_Y = (WORLD - YS) / 2;
   return LAND_RAW.map(p=>{
     const pts = p.pts.map(([x,y])=>[x*XS, y*YS + OFFSET_Y]);
-    return {name:p.name, pts, bbox:bboxOf(pts)};
+    return {name:p.name, label:p.label||'', pts, bbox:bboxOf(pts)};
   });
 }
 
@@ -451,9 +449,9 @@ function nearestNode(nx, ny){
 function assignFactions(){
   const s = state;
   const seeds = {
-    player: nearestNode(0.18, 0.25), // 北美
-    ai1: nearestNode(0.52, 0.22),    // 欧洲
-    ai2: nearestNode(0.75, 0.28),    // 东亚
+    player: nearestNode(0.18, 0.25),
+    ai1: nearestNode(0.52, 0.22),
+    ai2: nearestNode(0.75, 0.28),
   };
   const used = new Set();
   for(const f of PLAYABLE){
@@ -776,36 +774,81 @@ function loadGame(){
 }
 
 /* ============================================================
-   渲染
+   世界地圖底圖渲染（深海漸變、經緯線、大陸架淺海光暈、地形紋理）
    ============================================================ */
-function render(){
-  const s = state;
-  ctx.fillStyle = '#050d14';
-  ctx.fillRect(0,0,VW,VH);
-  if(!s) return;
+function drawWorldBackground(s, z){
+  const YS = WORLD * 0.75;
+  const OFFSET_Y = (WORLD - YS) / 2;
 
-  const z = cam.zoom;
+  // 1. 深海球面漸變背景
+  const [tlX, tlY] = w2s(0, OFFSET_Y);
+  const [brX, brY] = w2s(WORLD, OFFSET_Y + YS);
+  const oceanGrad = ctx.createRadialGradient(
+    VW * 0.5, VH * 0.48, Math.min(VW, VH) * 0.08,
+    VW * 0.5, VH * 0.5, Math.max(VW, VH) * 0.85
+  );
+  oceanGrad.addColorStop(0, '#0a1c2e');
+  oceanGrad.addColorStop(0.55, '#06121f');
+  oceanGrad.addColorStop(1, '#030810');
+  ctx.fillStyle = oceanGrad;
+  ctx.fillRect(0, 0, VW, VH);
 
-  // 海洋網格
-  ctx.strokeStyle = 'rgba(30,60,90,0.2)';
+  // 2. 世界地圖經緯網格（含赤道與回歸線標記）
+  const [wx0, wy0] = s2w(0, 0);
+  const [wx1, wy1] = s2w(VW, VH);
+  const lonStep = WORLD / 12; // 每 30° 經線
+  const latStep = YS / 6;     // 每 30° 緯線
+
+  ctx.save();
   ctx.lineWidth = 1;
-  const step = 200;
-  const [wx0,wy0] = s2w(0,0);
-  const [wx1,wy1] = s2w(VW,VH);
-  ctx.beginPath();
-  for(let x=Math.floor(wx0/step)*step; x<wx1; x+=step){
-    const [sx] = w2s(x,0);
-    if(sx<0||sx>VW) continue;
-    ctx.moveTo(sx,0); ctx.lineTo(sx,VH);
+  for(let i=0; i<=12; i++){
+    const x = i * lonStep;
+    if(x < wx0 - 50 || x > wx1 + 50) continue;
+    const [sx] = w2s(x, 0);
+    ctx.strokeStyle = (i === 6) ? 'rgba(95,176,255,0.20)' : 'rgba(55,110,160,0.12)';
+    ctx.beginPath(); ctx.moveTo(sx, Math.max(0, tlY)); ctx.lineTo(sx, Math.min(VH, brY)); ctx.stroke();
   }
-  for(let y=Math.floor(wy0/step)*step; y<wy1; y+=step){
-    const [,sy] = w2s(0,y);
-    if(sy<0||sy>VH) continue;
-    ctx.moveTo(0,sy); ctx.lineTo(VW,sy);
+  for(let j=0; j<=6; j++){
+    const y = OFFSET_Y + j * latStep;
+    if(y < wy0 - 50 || y > wy1 + 50) continue;
+    const [, sy] = w2s(0, y);
+    const isEquator = (j === 3);
+    ctx.strokeStyle = isEquator ? 'rgba(95,190,255,0.28)' : 'rgba(55,110,160,0.12)';
+    if(isEquator) ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.moveTo(Math.max(0, tlX), sy); ctx.lineTo(Math.min(VW, brX), sy); ctx.stroke();
+    ctx.setLineDash([]);
   }
-  ctx.stroke();
+  // 世界地圖邊框
+  ctx.strokeStyle = 'rgba(70,130,190,0.25)';
+  ctx.strokeRect(tlX, tlY, brX - tlX, brY - tlY);
+  ctx.restore();
 
-  // 陸地
+  // 3. 大陸架淺海光暈（第一層：海岸線外擴淺藍海棚）
+  for(const poly of s.land){
+    const b = poly.bbox;
+    const [x0,y0] = w2s(b.minX,b.minY);
+    const [x1,y1] = w2s(b.maxX,b.maxY);
+    if(x1<-40||y1<-40||x0>VW+40||y0>VH+40) continue;
+
+    ctx.beginPath();
+    poly.pts.forEach(([x,y],i)=>{
+      const [sx,sy] = w2s(x,y);
+      if(i===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
+    });
+    ctx.closePath();
+
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(38, 128, 168, 0.16)';
+    ctx.lineWidth = Math.max(6, 18 * z);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(56, 165, 195, 0.22)';
+    ctx.lineWidth = Math.max(3, 8 * z);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 4. 陸地本體漸變、海岸高光與大洲水印字
   for(const poly of s.land){
     const b = poly.bbox;
     const [x0,y0] = w2s(b.minX,b.minY);
@@ -819,18 +862,46 @@ function render(){
     });
     ctx.closePath();
 
-    // 陸地本體
-    ctx.fillStyle = '#112219';
+    const landGrad = ctx.createLinearGradient(x0, y0, x0, y1);
+    landGrad.addColorStop(0, '#182b24');
+    landGrad.addColorStop(0.5, '#13241d');
+    landGrad.addColorStop(1, '#0e1b16');
+    ctx.fillStyle = landGrad;
     ctx.fill();
-    
-    // 陸地邊緣發光
-    ctx.shadowColor = 'rgba(70,180,130,0.4)';
-    ctx.shadowBlur = 10 * z;
-    ctx.strokeStyle = 'rgba(70,150,110,0.8)';
-    ctx.lineWidth = Math.max(1, 1.8*z);
+
+    // 內岸高光線
+    ctx.strokeStyle = 'rgba(92, 188, 146, 0.55)';
+    ctx.lineWidth = Math.max(1, 1.6 * z);
     ctx.stroke();
-    ctx.shadowBlur = 0;
+
+    // 大洲水印字體
+    if(poly.label && z > 0.32 && z < 1.8){
+      const cx = (x0 + x1) * 0.5;
+      const cy = (y0 + y1) * 0.48;
+      ctx.save();
+      ctx.fillStyle = 'rgba(140, 200, 175, 0.14)';
+      ctx.font = `700 ${Math.max(10, Math.round(16 * z))}px "Segoe UI",sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(poly.label, cx, cy);
+      ctx.restore();
+    }
   }
+}
+
+/* ============================================================
+   渲染
+   ============================================================ */
+function render(){
+  const s = state;
+  if(!s){
+    ctx.fillStyle = '#050d14';
+    ctx.fillRect(0,0,VW,VH);
+    return;
+  }
+
+  const z = cam.zoom;
+  drawWorldBackground(s, z);
 
   // 連線
   ctx.lineWidth = Math.max(0.6, 2*z);
@@ -971,7 +1042,7 @@ function drawMinimap(){
     ctx.beginPath();
     poly.pts.forEach(([x,y],i)=>{
       const sx = ox + x*sc;
-      const sy = oy + (y - (WORLD - WORLD*0.75)/2)*sc / 0.75; // 适配小地图比例
+      const sy = oy + (y - (WORLD - WORLD*0.75)/2)*sc / 0.75;
       if(i===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
     });
     ctx.closePath();
@@ -1308,7 +1379,6 @@ function rebuildSidebar(){
   updateTopbar();
 }
 
-/* ---- 兵工廠：一次性構建 + 事件委托 ---- */
 function buildShopOnce(){
   const shop = $('shop');
   shop.innerHTML = EQ_KEYS.map(k=>{
@@ -1330,7 +1400,6 @@ function updateShopState(){
   const shop = $('shop');
   if(!shop || shop.children.length === 0) return;
   const a = s.selArmy ? s.armies.find(x=>x.id===s.selArmy) : null;
-  // 嚴格限制只有玩家部隊能購買
   const canBuyBase = a && a.faction==='player' && a.from==null;
   for(const btn of shop.children){
     const e = EQ[btn.dataset.eq];
@@ -1339,7 +1408,6 @@ function updateShopState(){
   }
 }
 
-/* 側欄事件委托 */
 document.getElementById('sidebar').addEventListener('click', e=>{
   const t = e.target;
   const armyItem = t.closest('[data-army]');
@@ -1386,8 +1454,21 @@ function selectArmy(id){
 function renameArmy(id){
   const a = state.armies.find(x=>x.id===id);
   if(!a || a.faction !== 'player') return;
-  const n = prompt('輸入部隊名稱：', a.name);
-  if(n && n.trim()){ a.name = n.trim().slice(0,24); rebuildSidebar(); }
+  const panel = $('selPanel');
+  if(!panel) return;
+  const existing = document.getElementById('inlineRenameBox');
+  if(existing){ existing.remove(); return; }
+  const box = document.createElement('div');
+  box.id = 'inlineRenameBox';
+  box.className = 'row';
+  box.style.marginTop = '5px';
+  box.innerHTML = `<input id="inlineRenameVal" type="text" maxlength="24" value="${escapeHtml(a.name)}" style="flex:1;background:#081018;color:#fff;border:1px solid #2e79b8;border-radius:3px;padding:2px 6px;font-size:11px"><button class="mini pri" id="inlineRenameOk">確定</button>`;
+  panel.prepend(box);
+  document.getElementById('inlineRenameOk').onclick = () => {
+    const val = (document.getElementById('inlineRenameVal').value || '').trim();
+    if(val){ a.name = val.slice(0,24); saveGame(); }
+    rebuildSidebar();
+  };
 }
 
 let _uiRefreshPending = false;
@@ -1502,8 +1583,19 @@ $('btnPause').addEventListener('click', ()=>{
   $('btnPause').textContent = paused ? '繼續' : '暫停';
   updateTopbar();
 });
+let _confirmNewTimer = null;
 $('btnNew').addEventListener('click', ()=>{
-  if(!confirm('開始新遊戲？')) return;
+  const btn = $('btnNew');
+  if(btn.dataset.arm !== '1'){
+    btn.dataset.arm = '1';
+    btn.textContent = '確定重開?';
+    clearTimeout(_confirmNewTimer);
+    _confirmNewTimer = setTimeout(()=>{ btn.dataset.arm=''; btn.textContent='新遊戲'; }, 3000);
+    return;
+  }
+  btn.dataset.arm = '';
+  btn.textContent = '新遊戲';
+  clearTimeout(_confirmNewTimer);
   newGame();
   rebuildSidebar();
   paused = false;
