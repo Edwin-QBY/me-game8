@@ -74,6 +74,7 @@ canvas.drag{cursor:grabbing}
     <span>Tick <b id="uiTick">0</b></span>
     <span>領土 <b id="uiNodes">0</b></span>
     <span id="uiForce"></span>
+    <span id="uiAI"></span>
     <span id="uiStatus"></span>
     <span class="sp"></span>
     <button id="btnFx">特效:開</button>
@@ -83,8 +84,9 @@ canvas.drag{cursor:grabbing}
   </div>
   <div id="main">
     <div id="sidebar">
-      <div class="sec"><div class="sec-title">我的軍隊</div><div class="sec-body" id="armyList"></div></div>
+      <div class="sec"><div class="sec-title">我的軍隊</div><div class="sec-body"><div id="armyTools"></div><div id="armyList" style="max-height:220px;overflow-y:auto"></div></div></div>
       <div class="sec"><div class="sec-title">選中部隊 / 節點</div><div class="sec-body" id="selPanel"></div></div>
+      <div class="sec"><div class="sec-title">戰線（多點同時開戰）</div><div class="sec-body" id="frontPanel"></div></div>
       <div class="sec"><div class="sec-title">預設編制（陸/空/海自動分隊部署）</div><div class="sec-body" id="presetList"></div></div>
       <div class="sec"><div class="sec-title">兵工廠（點擊加入選中部隊；同一部隊只能同一領域）</div><div class="sec-body"><div class="shop-grid" id="shop"></div></div></div>
       <div class="sec"><div class="sec-title">操作與兵種相剋</div><div class="sec-body" style="font-size:11px;line-height:1.7;color:#7d93a8">
@@ -114,6 +116,15 @@ canvas.drag{cursor:grabbing}
   </div>
 </div>
 
+<div id="setupModal" class="modal" style="display:none"><div class="modal-content">
+  <h3>新遊戲設定</h3>
+  <div class="row"><span>AI 對手數量：<b id="aiCntLbl" style="color:#ffd166">3</b></span>
+    <input type="range" id="aiCnt" min="1" max="20" value="3" style="width:170px;padding:0;border:0;background:none;margin:0"></div>
+  <div style="font-size:11px;color:#7d93a8;margin:10px 0">按「生成地圖」後，在地圖上點擊任意陸地節點作為你的起始落點。AI 會自動散佈在離你最遠的位置。</div>
+  <div class="row"><button id="setupCancel" onclick="closeSetup()">取消</button><button class="pri" onclick="confirmSetup()">生成地圖</button></div>
+</div></div>
+<div id="toast" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#173347;border:1px solid #2f78ad;color:#fff;padding:10px 22px;border-radius:6px;z-index:900;font-size:14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.6)"></div>
+
 <script>
 'use strict';
 
@@ -123,7 +134,7 @@ canvas.drag{cursor:grabbing}
 const WORLD = 4000;
 const TICK_MS = 700;
 const DMG_K = 0.45;
-const TARGET_LAND = 256;
+const TARGET_LAND = 330;
 const TARGET_SEA = 120;
 const SPD = {land:26, sea:40, air:95};     // 世界像素 / tick
 const AIR_RANGE = 650;
@@ -158,9 +169,28 @@ const CATS = ['輕武器','載具','支援','空中','海軍'];
 const CAT_COLOR = {'輕武器':'#a8d98a','載具':'#a8d98a','支援':'#a8d98a','空中':'#a9b6ff','海軍':'#7fd3f0'};
 const DOM_NAME = {land:'陸', air:'空', sea:'海'};
 
-const FAC_COLOR = {player:'#4ea8ff', ai1:'#ff5a5a', ai2:'#ffb84e', neutral:'#4a5763'};
-const FAC_NAME  = {player:'玩家', ai1:'阿爾法', ai2:'貝塔', neutral:'中立'};
-const PLAYABLE  = ['player','ai1','ai2'];
+const FAC_COLOR = {player:'#4ea8ff', neutral:'#4a5763'};
+const FAC_NAME  = {player:'玩家', neutral:'中立'};
+let PLAYABLE  = ['player'];
+let AIS = [];
+const MAX_AI = 20;
+const GREEK=['阿爾法','貝塔','伽瑪','德爾塔','艾普西隆','澤塔','伊塔','西塔','約塔','卡帕','拉姆達','繆','紐','克西','歐米克戎','派','柔','西格瑪','陶','宇普西隆'];
+function hslHex(h,s,l){
+  const a=s*Math.min(l,1-l);
+  const f=n=>{ const k=(n+h/30)%12; const c=l-a*Math.max(-1,Math.min(k-3,9-k,1)); return Math.round(255*c).toString(16).padStart(2,'0'); };
+  return '#'+f(0)+f(8)+f(4);
+}
+function setupFactions(n){
+  n=Math.max(1,Math.min(MAX_AI,n|0));
+  for(const k of Object.keys(FAC_COLOR)) if(k.startsWith('ai')){ delete FAC_COLOR[k]; delete FAC_NAME[k]; }
+  AIS=[];
+  for(let i=1;i<=n;i++){
+    const id='ai'+i; let h=(i*137.5+20)%360;
+    if(Math.abs(h-208)<30) h=(h+70)%360;
+    FAC_COLOR[id]=hslHex(h,0.75,0.6); FAC_NAME[id]=GREEK[i-1]; AIS.push(id);
+  }
+  PLAYABLE=['player',...AIS];
+}
 
 /* ============================================================
    世界地圖輪廓
@@ -457,53 +487,66 @@ function defaultPresets(){
   ];
 }
 
-function newGame(){
-  const m = buildMap();
-  state = {
-    tick:0,
-    res:{player:220, ai1:220, ai2:220},
-    nodes:m.nodes, adj:m.adj, lk:m.lk, land:m.land, L:m.L,
-    armies:[], nextArmyId:1, capitals:{},
-    supply:{player:new Set(),ai1:new Set(),ai2:new Set()},
-    seaSup:{player:new Set(),ai1:new Set(),ai2:new Set()},
-    carrier:{player:new Set(),ai1:new Set(),ai2:new Set()},
-    selArmy:null, selNode:null, gameOver:null,
+function makeState(m){
+  const sup=()=>{ const o={}; for(const f of PLAYABLE) o[f]=new Set(); return o; };
+  const res={}; for(const f of PLAYABLE) res[f]=220;
+  return {
+    tick:0,res,nodes:m.nodes,adj:m.adj,lk:m.lk,land:m.land,L:m.L,
+    armies:[],nextArmyId:1,capitals:{},owned:{},
+    supply:sup(),seaSup:sup(),carrier:sup(),
+    selArmy:null,selNode:null,multi:new Set(),fronts:[],nextFront:1,
+    gameOver:null,won:false,dead:{},aiAlive:AIS.length,setup:false,nAI:AIS.length,
     presets:defaultPresets()
   };
-  logLines=[]; fx.length=0;
-  assignFactions();
+}
+
+function startSetup(n){
+  setupFactions(n);
+  const m=buildMap();
+  state=makeState(m); state.setup=true;
+  logLines=[]; fx.length=0; frontMode=false; frontDraft=[]; multiMode=false;
+  cam.x=WORLD/2; cam.y=WORLD/2;
+  cam.zoom=clamp(Math.min(VW,VH)/WORLD*1.15,ZMIN,1);
+  log(`地圖已生成（${AIS.length} 個 AI）。請點擊一個陸地節點作為起始落點。`,'good');
+}
+
+function pickStart(id){
+  const s=state;
+  assignFactions(id);
+  s.setup=false;
   computeSupply();
   updateCameraToPlayer();
+  paused=false; $('btnPause').textContent='暫停';
   saveGame();
-  log('新遊戲開始：'+state.L+' 個陸地節點、'+(state.nodes.length-state.L)+' 個海域節點。','good');
+  log(`已在 ${s.nodes[id].name} 落腳，對手共 ${AIS.length} 個 AI。`,'good');
+  rebuildSidebar();
 }
 
-function nearestLand(nx,ny){
-  let bi=0,bd=Infinity;
-  for(let i=0;i<state.L;i++){
-    const n=state.nodes[i];
-    const d=(n.wx/WORLD-nx)**2+(n.wy/WORLD-ny)**2;
-    if(d<bd){bd=d;bi=i;}
-  }
-  return bi;
-}
-
-function assignFactions(){
-  const s=state;
-  const seeds={player:nearestLand(0.18,0.25), ai1:nearestLand(0.52,0.22), ai2:nearestLand(0.75,0.28)};
-  const used=new Set();
-  for(const f of PLAYABLE){
-    let idx=seeds[f];
-    if(used.has(idx)){ for(const nb of s.adj[idx]){ if(!used.has(nb)){idx=nb;break;} } }
-    used.add(idx); s.capitals[f]=idx;
+function assignFactions(startId){
+  const s=state, L=s.L, caps=[startId];
+  s.capitals.player=startId;
+  for(const f of AIS){
+    let best=-1,bd=-1;
+    for(let i=0;i<L;i++){
+      if(caps.includes(i)) continue;
+      const n=s.nodes[i]; let md=1e9;
+      for(const c of caps){
+        const d=Math.hypot(n.wx-s.nodes[c].wx,n.wy-s.nodes[c].wy);
+        if(d<md) md=d;
+      }
+      md+=Math.random()*80;
+      if(md>bd){ bd=md; best=i; }
+    }
+    caps.push(best); s.capitals[f]=best;
   }
   for(const f of PLAYABLE){
-    const cap=s.capitals[f];
-    s.nodes[cap].owner=f;
-    s.nodes[cap].income=Math.max(s.nodes[cap].income,6);
-    for(const nb of s.adj[cap]) s.nodes[nb].owner=f;
+    const cap=s.capitals[f], n=s.nodes[cap];
+    n.owner=f; n.income=Math.max(n.income,6);
+    for(const nb of s.adj[cap]) if(s.nodes[nb].owner==='neutral') s.nodes[nb].owner=f;
   }
-  for(const f of PLAYABLE) createArmy(f,s.capitals[f],{rifle:6,mg:2,mbt:1},FAC_NAME[f]+'第1連');
+  for(const f of PLAYABLE){
+    createArmy(f,s.capitals[f],f==='player'?{rifle:6,mg:2,mbt:1}:arch(f).tpl,FAC_NAME[f]+'第1連');
+  }
 }
 
 function updateCameraToPlayer(){
@@ -594,20 +637,21 @@ function damageGroup(arr, d, kills){
    補給
    ============================================================ */
 function computeSupply(){
-  const s=state, L=s.L;
+  const s=state, L=s.L, owned={};
+  for(const f of PLAYABLE) owned[f]=[];
+  for(let i=0;i<L;i++){ const o=s.nodes[i].owner; if(o!=='neutral' && owned[o]) owned[o].push(i); }
+  s.owned=owned;
   for(const f of PLAYABLE){
-    const cap=s.capitals[f];
-    const seen=new Set();
-    if(cap!=null && s.nodes[cap].owner===f){
-      seen.add(cap);
-      const q=[cap];
-      while(q.length){
-        const id=q.pop();
-        for(const nb of s.adj[id]) if(!seen.has(nb) && s.nodes[nb].owner===f){ seen.add(nb); q.push(nb); }
-      }
+    const seen=new Set(), q=[], cap=s.capitals[f];
+    // 補給樞紐：首都 + 所有己方城市；都沒有時任取一個己方節點
+    const src=owned[f].filter(i=>i===cap || s.nodes[i].terrain==='city');
+    if(!src.length && owned[f].length) src.push(owned[f][0]);
+    for(const i of src){ seen.add(i); q.push(i); }
+    while(q.length){
+      const id=q.pop();
+      for(const nb of s.adj[id]) if(!seen.has(nb) && s.nodes[nb].owner===f){ seen.add(nb); q.push(nb); }
     }
     s.supply[f]=seen;
-    // 海上補給：從己方補給港向外 3 跳海域
     const sea=new Set(); let front=[];
     for(const id of seen) for(const sid of s.lk[id]) if(!sea.has(sid)){ sea.add(sid); front.push(sid); }
     for(let d=0;d<3;d++){
@@ -619,9 +663,10 @@ function computeSupply(){
     s.carrier[f]=new Set();
   }
   for(const a of s.armies){
-    if(a.from==null && a.fl.carrier>0) s.carrier[a.faction].add(a.node);
+    if(a.from==null && a.fl.carrier>0 && s.carrier[a.faction]) s.carrier[a.faction].add(a.node);
   }
 }
+
 function isSupplied(a){
   if(a.from!=null) return true;
   const s=state, f=a.faction;
@@ -660,17 +705,27 @@ function bfsPath(start, goalFn, maxDepth){
   }
   return null;
 }
-function findPath(a, target){
+function findPath(a, target, start){
   if(a.dom==='air'){
-    const A=state.nodes[a.node], B=state.nodes[target];
+    const A=state.nodes[start], B=state.nodes[target];
     return Math.hypot(A.wx-B.wx,A.wy-B.wy)<=AIR_RANGE ? [target] : null;
   }
-  return bfsPath(a.node, id=>id===target, 60);
+  return bfsPath(start, id=>id===target, 80);
 }
-function orderMove(a, target){
-  if(a.from!=null || a.node===target) return false;
-  const path=findPath(a,target);
+/* keep=true：保留戰線/集結標記（由系統自動下令時使用） */
+function orderMove(a, target, keep){
+  const moving=a.from!=null;
+  if(moving && a.dom==='air') return false;
+  const start=moving?a.to:a.node;
+  if(start===target){
+    if(!moving) return false;
+    a.path=[]; if(!keep){ a.mergeTo=null; a.front=null; }
+    return true;
+  }
+  const path=findPath(a,target,start);
   if(!path||!path.length) return false;
+  if(!keep){ a.mergeTo=null; a.front=null; }
+  if(moving){ a.path=path; return true; }
   const first=path.shift();
   a.from=a.node; a.to=first; a.prog=0; a.node=null; a.path=path;
   return true;
@@ -691,30 +746,72 @@ function buildNodeMap(){
 function purge(){
   const s=state, before=s.armies.length;
   s.armies=s.armies.filter(a=>a.units>0);
-  if(s.armies.length!==before && s.selArmy && !s.armies.find(a=>a.id===s.selArmy)) s.selArmy=null;
+  if(s.armies.length!==before){
+    if(s.selArmy && !s.armies.some(a=>a.id===s.selArmy)) s.selArmy=null;
+    if(s.multi.size){ const ids=new Set(s.armies.map(a=>a.id)); for(const id of [...s.multi]) if(!ids.has(id)) s.multi.delete(id); }
+    const fr=new Set(); for(const a of s.armies) if(a.front!=null) fr.add(a.front);
+    s.fronts=s.fronts.filter(f=>fr.has(f.id));
+  }
 }
 
 function moveArmies(nm){
-  for(const a of state.armies){
+  const s=state, edge=new Map();
+  for(const a of s.armies){
+    a._pass=null;
     if(a.from==null) continue;
-    const A=state.nodes[a.from], B=state.nodes[a.to];
-    const dist=Math.max(20, Math.hypot(B.wx-A.wx,B.wy-A.wy));
+    const A=s.nodes[a.from], B=s.nodes[a.to];
+    const dist=Math.max(20,Math.hypot(B.wx-A.wx,B.wy-A.wy));
     const sp=SPD[a.dom||'land']*clamp(1/(1+a.val/1500),0.45,1);
     a.prog+=sp/dist;
     if(a.prog>=1){
-      a.node=a.to; a.from=null; a.to=null; a.prog=0;
+      const n=a.to;
+      a.node=n; a.from=null; a.to=null; a.prog=0;
       if(a.path&&a.path.length){
-        const blocked=(nm.get(a.node)||[]).some(x=>x.faction!==a.faction);
-        if(blocked){ a.path=[]; }
-        else{ const nx=a.path.shift(); a.from=a.node; a.to=nx; a.node=null; }
+        const blocked=(nm.get(n)||[]).some(x=>x.faction!==a.faction);
+        if(blocked) a.path=[];
+        else { const nx=a.path.shift(); a._pass=n; a.from=n; a.to=nx; a.node=null; }
       }
+    }
+    if(a.from!=null){
+      const k=a.from+'>'+a.to;
+      let l=edge.get(k); if(!l){ l=[]; edge.set(k,l); } l.push(a);
+    }
+  }
+  // 1) 迎面對向移動：在路上相遇就停下交戰（在相遇點較近的節點開戰）
+  for(const [k,list] of edge){
+    const [f,t]=k.split('>');
+    const opp=edge.get(t+'>'+f); if(!opp) continue;
+    for(const a of list) for(const b of opp){
+      if(a.from==null||b.from==null||a.faction===b.faction||a.dom!==b.dom) continue;
+      if(a.prog+b.prog<1) continue;
+      const m=(a.prog+1-b.prog)/2;
+      const n=m<0.5?a.from:a.to;
+      for(const x of [a,b]){ x.node=n; x.from=null; x.to=null; x.prog=0; x.path=[]; x._pass=null; }
+    }
+  }
+  // 2) 途經節點：遇敵則停下；無敵軍的陸軍順手佔領
+  const at=new Map();
+  for(const a of s.armies){
+    const n=a.from==null?a.node:a._pass;
+    if(n==null) continue;
+    let l=at.get(n); if(!l){ l=[]; at.set(n,l); } l.push(a);
+  }
+  for(const a of s.armies){
+    if(a._pass==null||a.from==null) continue;
+    const n=a._pass, here=at.get(n)||[];
+    if(here.some(x=>x.faction!==a.faction)){
+      a.node=n; a.from=null; a.to=null; a.prog=0; a.path=[]; a._pass=null;
+    } else if(a.dom==='land' && n<s.L && s.nodes[n].owner!==a.faction){
+      const nd=s.nodes[n], was=nd.owner; nd.owner=a.faction;
+      if(a.faction==='player') log(`途經佔領 ${nd.name}。`,'good');
+      else if(was==='player') log(`失去 ${nd.name}！`,'bad');
     }
   }
 }
 
 function doTick(){
   const s=state;
-  if(!s||s.gameOver) return;
+  if(!s||s.gameOver||s.setup) return;
   s.tick++;
 
   const nm0=buildNodeMap();
@@ -728,6 +825,8 @@ function doTick(){
 
   captureNodes(nm);
   computeSupply();
+  autoMerge();
+  advanceFronts(nm);
 
   // 空軍燃料損耗
   for(const a of s.armies){
@@ -745,8 +844,8 @@ function doTick(){
     s.res[f]+=inc;
   }
 
-  if(s.tick%3===0){ aiTurn('ai1'); aiTurn('ai2'); }
-  if(s.tick%5===0){ aiMove('ai1'); aiMove('ai2'); }
+  for(const f of AIS) aiTurn(f);
+  if(s.tick%2===0){ const nmA=buildNodeMap(); for(const f of AIS) aiMove(f,nmA); }
 
   checkEnd();
   if(s.tick%10===0) saveGame();
@@ -1103,114 +1202,106 @@ function renderFx(z){
 /* ============================================================
    AI
    ============================================================ */
-const AI_POOL={
-  ai1:{land:['mbt','spg','mlrs','rifle','mg','mortar'], air:['fighter','bomber','heli'], sea:['cruiser','destroyer','missileboat']},
-  ai2:{land:['sam','atgm','ifv','rifle','engineer','mortar'], air:['fighter','heli','bomber'], sea:['sub','destroyer','missileboat','carrier']},
-};
-function aiTurn(f){
-  const s=state, L=s.L;
-  const mine=s.armies.filter(a=>a.faction===f);
-  const res=s.res[f];
-  const myNodes=[]; for(let i=0;i<L;i++) if(s.nodes[i].owner===f) myNodes.push(s.nodes[i]);
-  if(!myNodes.length) return;
-  const by={land:[],air:[],sea:[]};
-  for(const a of mine) if(a.dom) by[a.dom].push(a);
+const ARCH=[
+  {land:['mbt','spg','mlrs','rifle','mg','mortar'],air:['fighter','bomber','heli'],sea:['cruiser','destroyer','missileboat'],tpl:{rifle:5,mbt:2,mg:2}},
+  {land:['sam','atgm','ifv','rifle','engineer','mortar'],air:['fighter','heli','bomber'],sea:['sub','destroyer','missileboat','carrier'],tpl:{rifle:5,atgm:2,sam:1,ifv:1}},
+  {land:['apc','ifv','mbt','sniper','rifle','truck','drone'],air:['bomber','heli','fighter'],sea:['destroyer','cruiser','sub'],tpl:{rifle:4,apc:2,ifv:2,drone:1}},
+];
+function arch(f){ return ARCH[(parseInt(f.slice(2),10)||0)%3]; }
 
-  if(by.land.length<3 && res>=190){
-    const nd=pick(myNodes); s.res[f]-=180;
-    createArmy(f,nd.id, f==='ai1'?{rifle:5,mbt:2,mg:2}:{rifle:5,atgm:2,sam:1,ifv:1}, FAC_NAME[f]+'·新編');
-    return;
-  }
-  if(!by.air.length && res>=210 && Math.random()<0.5){
-    const nd=pick(myNodes); s.res[f]-=200;
-    createArmy(f,nd.id,{fighter:2,bomber:1}, FAC_NAME[f]+'·航空隊');
-    return;
-  }
-  if(!by.sea.length && res>=230 && Math.random()<(f==='ai2'?0.7:0.4)){
-    const ports=myNodes.filter(n=>s.lk[n.id].length);
-    if(ports.length){
-      const pn=pick(ports); s.res[f]-=210;
-      createArmy(f,s.lk[pn.id][0],{destroyer:2,sub:1},FAC_NAME[f]+'·艦隊');
-      return;
+/* AI 每個 tick 都會行動，一次最多執行 4 次建軍/補強 */
+function aiTurn(f){
+  const s=state, own=s.owned[f];
+  if(!own||!own.length) return;
+  const ar=arch(f), by={land:[],air:[],sea:[]};
+  for(const a of s.armies) if(a.faction===f && a.dom) by[a.dom].push(a);
+  const landCap=Math.min(18,3+Math.floor(own.length/3));
+  const airTpl={fighter:2,bomber:1}, seaTpl={destroyer:2,sub:1};
+  const ports=own.filter(i=>s.lk[i].length);
+  const rn=()=>own[Math.floor(Math.random()*own.length)];
+  for(let g=0; g<4; g++){
+    const res=s.res[f];
+    if(res<25) break;
+    if(by.land.length<landCap && res>=presetCost(ar.tpl)){
+      s.res[f]-=presetCost(ar.tpl);
+      by.land.push(createArmy(f,rn(),ar.tpl,FAC_NAME[f]+'·新編'));
+      continue;
     }
-  }
-  const doms=Object.keys(by).filter(d=>by[d].length);
-  if(!doms.length) return;
-  const d=pick(doms);
-  const target=by[d].reduce((a,b)=>a.val<b.val?a:b);
-  const k=pick(AI_POOL[f][d]);
-  if(res>=EQ[k].cost){
-    s.res[f]-=EQ[k].cost;
-    target.eq[k]=(target.eq[k]||0)+1;
-    recalc(target);
+    if(by.air.length<Math.floor(by.land.length/3)+1 && res>=presetCost(airTpl) && Math.random()<0.5){
+      s.res[f]-=presetCost(airTpl);
+      by.air.push(createArmy(f,rn(),airTpl,FAC_NAME[f]+'·航空隊'));
+      continue;
+    }
+    if(ports.length && by.sea.length<Math.floor(by.land.length/3) && res>=presetCost(seaTpl) && Math.random()<0.4){
+      s.res[f]-=presetCost(seaTpl);
+      const pn=ports[Math.floor(Math.random()*ports.length)];
+      by.sea.push(createArmy(f,s.lk[pn][0],seaTpl,FAC_NAME[f]+'·艦隊'));
+      continue;
+    }
+    const doms=Object.keys(by).filter(d=>by[d].length);
+    if(!doms.length) break;
+    const d=pick(doms), k=pick(ar[d]);
+    if(res<EQ[k].cost) break;
+    const t=by[d].reduce((a,b)=>a.val<b.val?a:b);
+    s.res[f]-=EQ[k].cost; t.eq[k]=(t.eq[k]||0)+1; recalc(t);
   }
 }
 
-function aiMove(f){
+function aiMove(f,nm){
   const s=state, L=s.L;
-  const stat=s.armies.filter(a=>a.faction===f && a.from==null);
-  if(!stat.length) return;
-  const nm=buildNodeMap();
   const engaged=a=>(nm.get(a.node)||[]).some(x=>x.faction!==f);
-
-  // 陸軍：最強的一支向最近的非己方節點推進
-  const lands=stat.filter(a=>a.dom==='land' && !engaged(a));
-  if(lands.length){
-    const a=lands.reduce((x,y)=>x.val>y.val?x:y);
-    const nbs=s.adj[a.node].filter(j=>s.nodes[j].owner!==f);
-    if(nbs.length){
-      nbs.sort((x,y)=>{
-        const nx=s.nodes[x], ny=s.nodes[y];
-        const ex=nx.owner==='neutral'?0:1, ey=ny.owner==='neutral'?0:1;
-        return ex!==ey?ex-ey:nx.income-ny.income;
-      });
-      orderMove(a,nbs[0]);
-    } else {
-      const p=bfsPath(a.node,id=>s.nodes[id].owner!==f,25);
-      if(p) orderMove(a,p[p.length-1]);
-    }
-  }
-  // 空軍：缺油返航，否則出擊最近的敵軍
-  const airs=stat.filter(a=>a.dom==='air');
-  if(airs.length){
-    const a=airs[Math.floor(Math.random()*airs.length)];
-    const here=s.nodes[a.node];
-    if(!isSupplied(a)){
-      let best=null,bd=Infinity;
-      for(const id of airNodes(a.node)){
-        if(id>=L||!s.supply[f].has(id)) continue;
-        const d=Math.hypot(s.nodes[id].wx-here.wx,s.nodes[id].wy-here.wy);
-        if(d<bd){bd=d;best=id;}
+  for(const a of s.armies){
+    if(a.faction!==f||a.from!=null||!a.dom||a.units<=0) continue;
+    if(a.dom==='land'){
+      if(engaged(a)||Math.random()>0.6) continue;
+      const nbs=s.adj[a.node].filter(j=>s.nodes[j].owner!==f);
+      if(nbs.length){
+        nbs.sort((x,y)=>{
+          const nx=s.nodes[x], ny=s.nodes[y];
+          const ex=nx.owner==='neutral'?0:1, ey=ny.owner==='neutral'?0:1;
+          return ex!==ey?ex-ey:nx.income-ny.income;
+        });
+        orderMove(a,nbs[0]);
+      } else {
+        const p=bfsPath(a.node,id=>s.nodes[id].owner!==f,25);
+        if(p&&p.length) orderMove(a,p[p.length-1]);
       }
-      if(best==null) best=s.capitals[f];
-      orderMove(a,best);
-    } else if(Math.random()<0.7){
-      let best=null,bs=-1;
-      for(const id of airNodes(a.node)){
-        const arr=nm.get(id); if(!arr) continue;
-        const foes=arr.filter(x=>x.faction!==f);
-        if(!foes.length) continue;
-        const sc=foes.reduce((t,x)=>t+x.val,0)/(1+Math.hypot(s.nodes[id].wx-here.wx,s.nodes[id].wy-here.wy)/300);
-        if(sc>bs){bs=sc;best=id;}
+    } else if(a.dom==='air'){
+      const here=s.nodes[a.node];
+      if(!isSupplied(a)){
+        let best=null,bd=Infinity;
+        for(const id of airNodes(a.node)){
+          if(id>=L||!s.supply[f].has(id)) continue;
+          const d=Math.hypot(s.nodes[id].wx-here.wx,s.nodes[id].wy-here.wy);
+          if(d<bd){bd=d;best=id;}
+        }
+        if(best==null) best=s.capitals[f];
+        orderMove(a,best);
+      } else if(Math.random()<0.45){
+        let best=null,bs=-1;
+        for(const id of airNodes(a.node)){
+          const arr=nm.get(id); if(!arr) continue;
+          const foes=arr.filter(x=>x.faction!==f);
+          if(!foes.length) continue;
+          const sc=foes.reduce((t,x)=>t+x.val,0)/(1+Math.hypot(s.nodes[id].wx-here.wx,s.nodes[id].wy-here.wy)/300);
+          if(sc>bs){bs=sc;best=id;}
+        }
+        if(best!=null) orderMove(a,best);
+      }
+    } else {
+      if(engaged(a)||Math.random()>0.5) continue;
+      const sup=isSupplied(a);
+      let best=null,bs=-1e9;
+      for(const nb of s.adj[a.node]){
+        let sc=Math.random();
+        const arr=nm.get(nb);
+        if(arr && arr.some(x=>x.faction!==f && x.dom==='sea')) sc+=3;
+        for(const lid of s.lk[nb]) if(s.nodes[lid].owner!==f) sc+=1.5;
+        if(!sup && s.seaSup[f].has(nb)) sc+=5;
+        if(sc>bs){bs=sc;best=nb;}
       }
       if(best!=null) orderMove(a,best);
     }
-  }
-  // 海軍：靠近敵艦或敵方海岸；缺補給時回港
-  const seas=stat.filter(a=>a.dom==='sea' && !engaged(a));
-  if(seas.length){
-    const a=seas[Math.floor(Math.random()*seas.length)];
-    const sup=isSupplied(a);
-    let best=null,bs=-1e9;
-    for(const nb of s.adj[a.node]){
-      let sc=Math.random();
-      const arr=nm.get(nb);
-      if(arr && arr.some(x=>x.faction!==f && x.dom==='sea')) sc+=3;
-      for(const lid of s.lk[nb]) if(s.nodes[lid].owner!==f) sc+=1.5;
-      if(!sup && s.seaSup[f].has(nb)) sc+=5;
-      if(sc>bs){bs=sc;best=nb;}
-    }
-    if(best!=null) orderMove(a,best);
   }
 }
 
@@ -1218,26 +1309,42 @@ function aiMove(f){
    勝負
    ============================================================ */
 function checkEnd(){
-  const s=state, total=s.L;
-  let mine=0;
-  for(let i=0;i<s.L;i++) if(s.nodes[i].owner==='player') mine++;
-  if(s.nodes[s.capitals.player].owner!=='player'){ s.gameOver='lose'; log('首都陷落，遊戲結束。','bad'); return; }
-  if(mine>=Math.floor(total*0.70)){ s.gameOver='win'; log('控制 70% 領土，勝利！','good'); return; }
-  const alive=PLAYABLE.filter(f=>f!=='player' && s.nodes[s.capitals[f]].owner===f);
-  if(!alive.length){ s.gameOver='win'; log('敵方全部覆滅，勝利！','good'); }
+  const s=state; if(s.gameOver) return;
+  const cnt={}, alive={};
+  for(let i=0;i<s.L;i++){ const o=s.nodes[i].owner; if(o!=='neutral') cnt[o]=(cnt[o]||0)+1; }
+  for(const a of s.armies) alive[a.faction]=true;
+  let aiAlive=0;
+  for(const f of AIS){
+    if((cnt[f]||0)>0 || alive[f]) aiAlive++;
+    else if(!s.dead[f]){ s.dead[f]=true; log(`${FAC_NAME[f]} 已被消滅！`,'good'); }
+  }
+  s.aiAlive=aiAlive;
+  if(!(cnt.player||0) && !alive.player){
+    s.gameOver='lose'; log('你的領土與軍隊全數覆滅，遊戲結束。','bad'); showToast('失敗：領土與軍隊全數覆滅'); return;
+  }
+  if(!s.won){
+    if(aiAlive===0){ s.won=true; log('所有 AI 均已被消滅，勝利！遊戲可繼續。','good'); showToast('勝利：所有 AI 已被消滅！可繼續遊戲'); }
+    else if((cnt.player||0)>=Math.floor(s.L*0.7)){ s.won=true; log('你已控制 70% 領土，勝利！遊戲可繼續。','good'); showToast('勝利：控制 70% 領土！可繼續遊戲'); }
+  }
+}
+let _toastT=null;
+function showToast(t){
+  const el=$('toast'); el.textContent=t; el.style.display='block';
+  clearTimeout(_toastT); _toastT=setTimeout(()=>{ el.style.display='none'; },7000);
 }
 
 /* ============================================================
    存檔
    ============================================================ */
-const SAVE_KEY='wf_save_v6';
+const SAVE_KEY='wf_save_v7';
 function saveGame(){
   try{
-    const s=state;
+    const s=state; if(!s||s.setup) return;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      tick:s.tick,res:s.res,nodes:s.nodes,adj:s.adj,lk:s.lk,L:s.L,
-      armies:s.armies.map(a=>({id:a.id,faction:a.faction,node:a.node,from:a.from,to:a.to,prog:a.prog,path:a.path,eq:a.eq,fr:a.fr,name:a.name})),
-      nextArmyId:s.nextArmyId,capitals:s.capitals,gameOver:s.gameOver,presets:s.presets
+      tick:s.tick,res:s.res,nodes:s.nodes,adj:s.adj,lk:s.lk,L:s.L,nAI:s.nAI,
+      armies:s.armies.map(a=>({id:a.id,faction:a.faction,node:a.node,from:a.from,to:a.to,prog:a.prog,path:a.path,eq:a.eq,fr:a.fr,name:a.name,front:a.front,frontIdx:a.frontIdx,mergeTo:a.mergeTo})),
+      nextArmyId:s.nextArmyId,capitals:s.capitals,gameOver:s.gameOver,presets:s.presets,
+      fronts:s.fronts,nextFront:s.nextFront,won:s.won,dead:s.dead
     }));
   }catch(e){}
 }
@@ -1246,17 +1353,15 @@ function loadGame(){
     const raw=localStorage.getItem(SAVE_KEY);
     if(!raw) return false;
     const d=JSON.parse(raw);
-    if(!d||!d.nodes||!d.nodes.length||!d.lk) return false;
+    if(!d||!d.nodes||!d.nodes.length||!d.lk||!d.nAI) return false;
+    setupFactions(d.nAI);
     const land=buildLand(); buildCaches(land);
-    state={
-      tick:d.tick,res:d.res,nodes:d.nodes,adj:d.adj,lk:d.lk,L:d.L,land,
-      armies:d.armies,nextArmyId:d.nextArmyId,capitals:d.capitals,
-      supply:{player:new Set(),ai1:new Set(),ai2:new Set()},
-      seaSup:{player:new Set(),ai1:new Set(),ai2:new Set()},
-      carrier:{player:new Set(),ai1:new Set(),ai2:new Set()},
-      selArmy:null,selNode:null,gameOver:d.gameOver||null,presets:d.presets||defaultPresets()
-    };
-    for(const a of state.armies){ a.path=a.path||[]; a.fr=a.fr||{}; recalc(a); }
+    const st=makeState({nodes:d.nodes,adj:d.adj,lk:d.lk,land,L:d.L});
+    Object.assign(st,{tick:d.tick,res:d.res,armies:d.armies,nextArmyId:d.nextArmyId,capitals:d.capitals,
+      gameOver:d.gameOver||null,presets:d.presets||defaultPresets(),fronts:d.fronts||[],nextFront:d.nextFront||1,
+      won:!!d.won,dead:d.dead||{}});
+    state=st;
+    for(const a of st.armies){ a.path=a.path||[]; a.fr=a.fr||{}; recalc(a); }
     logLines=[];
     computeSupply();
     updateCameraToPlayer();
@@ -1400,6 +1505,7 @@ function render(){
     }
   }
 
+  drawFronts(z);
   // 軍隊標記（記錄螢幕座標供點擊判定）
   const nodeArmies={};
   for(const a of s.armies) if(a.from==null) (nodeArmies[a.node] ||= []).push(a);
@@ -1411,18 +1517,71 @@ function render(){
       const ang=-Math.PI/2+(i-(cnt-1)/2)*0.72;
       const rad=rb+Math.max(7,13*z);
       a._sx=nx+Math.cos(ang)*rad; a._sy=ny+Math.sin(ang)*rad;
-      drawArmyToken(a,a._sx,a._sy,z,a.id===s.selArmy);
+      drawArmyToken(a,a._sx,a._sy,z,a.id===s.selArmy||s.multi.has(a.id));
     });
   }
   for(const a of s.armies){
     if(a.from==null) continue;
     const [wx,wy]=armyPos(a), [x,y]=w2s(wx,wy);
     a._sx=x; a._sy=y;
-    drawArmyToken(a,x,y,z,a.id===s.selArmy);
+    drawArmyToken(a,x,y,z,a.id===s.selArmy||s.multi.has(a.id));
   }
 
   renderFx(z);
   drawMinimap();
+  drawOverlay();
+}
+
+function drawFronts(z){
+  const s=state;
+  for(const f of s.fronts){
+    const list=s.armies.filter(a=>a.front===f.id).sort((x,y)=>x.frontIdx-y.frontIdx);
+    if(list.length<2) continue;
+    const col=FAC_COLOR[list[0].faction];
+    const P=list.map(a=>w2s(...armyPos(a)));
+    ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
+    const trace=()=>{ ctx.beginPath(); P.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); };
+    ctx.strokeStyle=hexA(col,0.25); ctx.lineWidth=Math.max(6,16*z); trace(); ctx.stroke();
+    ctx.strokeStyle=hexA(col,0.95); ctx.lineWidth=Math.max(2,3.2*z);
+    ctx.setLineDash([10,6]); ctx.lineDashOffset=-(performance.now()/60)%16; trace(); ctx.stroke();
+    ctx.setLineDash([]);
+    const m=P[Math.floor(P.length/2)];
+    ctx.fillStyle='#fff'; ctx.font='bold 11px "Microsoft JhengHei",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.strokeStyle='rgba(0,0,0,.7)'; ctx.lineWidth=3; ctx.strokeText(f.name,m[0],m[1]-14); ctx.fillText(f.name,m[0],m[1]-14);
+    ctx.restore();
+  }
+}
+
+function drawOverlay(){
+  const s=state; if(!s) return;
+  if(frontMode && frontDraft.length){
+    ctx.save(); ctx.lineJoin='round';
+    ctx.strokeStyle='rgba(255,209,102,.9)'; ctx.lineWidth=3; ctx.setLineDash([8,5]);
+    ctx.beginPath();
+    frontDraft.forEach((id,i)=>{ const n=s.nodes[id]; const [x,y]=w2s(n.wx,n.wy); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.stroke(); ctx.setLineDash([]);
+    frontDraft.forEach((id,i)=>{
+      const n=s.nodes[id]; const [x,y]=w2s(n.wx,n.wy);
+      ctx.beginPath(); ctx.arc(x,y,10,0,6.283); ctx.fillStyle='#ffd166'; ctx.fill();
+      ctx.fillStyle='#222'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(i+1,x,y+1);
+    });
+    ctx.restore();
+  }
+  if(drag && drag.box && drag.moved){
+    ctx.save(); ctx.strokeStyle='#7cc4ff'; ctx.fillStyle='rgba(124,196,255,.12)'; ctx.lineWidth=1.2;
+    const x=Math.min(drag.sx,drag.ex), y=Math.min(drag.sy,drag.ey), w=Math.abs(drag.ex-drag.sx), h=Math.abs(drag.ey-drag.sy);
+    ctx.fillRect(x,y,w,h); ctx.strokeRect(x,y,w,h); ctx.restore();
+  }
+  let msg=null;
+  if(s.setup) msg='點擊任意陸地節點，選擇你的起始落點';
+  else if(frontMode) msg='畫戰線：依序點擊陸地節點，再於右側按「確認出擊」（右鍵取消）';
+  if(msg){
+    ctx.save(); ctx.font='bold 14px "Microsoft JhengHei",sans-serif'; ctx.textAlign='center';
+    const w=ctx.measureText(msg).width+32;
+    ctx.fillStyle='rgba(10,20,30,.88)'; ctx.fillRect(VW/2-w/2,14,w,32);
+    ctx.strokeStyle='#2e79b8'; ctx.strokeRect(VW/2-w/2+.5,14.5,w-1,31);
+    ctx.fillStyle='#ffd166'; ctx.textBaseline='middle'; ctx.fillText(msg,VW/2,31); ctx.restore();
+  }
 }
 
 function drawArmyToken(a,x,y,z,selected){
@@ -1482,25 +1641,28 @@ cv.addEventListener('mousedown',e=>{
   if(Date.now()-lastTouchTime<700) return;
   if(e.button===2) return;
   const r=cv.getBoundingClientRect();
-  drag={sx:e.clientX-r.left,sy:e.clientY-r.top,cx:cam.x,cy:cam.y,moved:false};
+  const x=e.clientX-r.left, y=e.clientY-r.top;
+  drag={sx:x,sy:y,cx:cam.x,cy:cam.y,moved:false,shift:e.shiftKey,box:e.shiftKey&&!!state&&!state.setup,ex:x,ey:y};
   cv.classList.add('drag');
 });
 window.addEventListener('mousemove',e=>{
   if(!drag) return;
   const r=cv.getBoundingClientRect();
-  const dx=(e.clientX-r.left)-drag.sx, dy=(e.clientY-r.top)-drag.sy;
+  const x=e.clientX-r.left, y=e.clientY-r.top, dx=x-drag.sx, dy=y-drag.sy;
   if(Math.abs(dx)+Math.abs(dy)>4) drag.moved=true;
-  if(drag.moved){ cam.x=drag.cx-dx/cam.zoom; cam.y=drag.cy-dy/cam.zoom; }
+  if(drag.box){ drag.ex=x; drag.ey=y; }
+  else if(drag.moved){ cam.x=drag.cx-dx/cam.zoom; cam.y=drag.cy-dy/cam.zoom; }
 });
 window.addEventListener('mouseup',()=>{
   if(!drag) return;
   cv.classList.remove('drag');
-  if(!drag.moved) handleClick(drag.sx,drag.sy);
+  if(drag.box && drag.moved) boxSelect(drag.sx,drag.sy,drag.ex,drag.ey);
+  else if(!drag.moved) handleClick(drag.sx,drag.sy,drag.shift);
   drag=null;
 });
 cv.addEventListener('contextmenu',e=>{
   e.preventDefault();
-  if(state){ state.selArmy=null; state.selNode=null; rebuildSidebar(); }
+  if(state){ state.selArmy=null; state.selNode=null; state.multi.clear(); if(frontMode){ frontMode=false; frontDraft=[]; } rebuildSidebar(); }
 });
 cv.addEventListener('wheel',e=>{
   e.preventDefault();
@@ -1565,51 +1727,272 @@ document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false})
 document.addEventListener('gestureend',e=>e.preventDefault(),{passive:false});
 
 /* ============================================================
-   點擊處理：標記=選取 / 合併；節點=自動尋路移動或選取
+   點擊處理 / 多選 / 合併 / 出售 / 戰線
    ============================================================ */
-function handleClick(sx,sy){
+let multiMode=false, frontMode=false, frontDraft=[], sellArm=null, sellTimer=null;
+
+function selectedArmies(){
+  const s=state;
+  if(s.multi.size) return s.armies.filter(a=>s.multi.has(a.id)&&a.faction==='player');
+  const a=s.selArmy?s.armies.find(x=>x.id===s.selArmy):null;
+  return a&&a.faction==='player'?[a]:[];
+}
+function toggleMulti(id){
+  const s=state;
+  if(!s.multi.size && s.selArmy && s.selArmy!==id) s.multi.add(s.selArmy);
+  if(s.multi.has(id)) s.multi.delete(id); else s.multi.add(id);
+  s.selArmy=null; s.selNode=null; rebuildSidebar();
+}
+function boxSelect(x0,y0,x1,y1){
+  const s=state, lx=Math.min(x0,x1), hx=Math.max(x0,x1), ly=Math.min(y0,y1), hy=Math.max(y0,y1);
+  for(const a of s.armies){
+    if(a.faction==='player' && a._sx>=lx && a._sx<=hx && a._sy>=ly && a._sy<=hy) s.multi.add(a.id);
+  }
+  s.selArmy=null; s.selNode=null; rebuildSidebar();
+}
+function pickAll(dom){
+  const s=state;
+  s.multi=new Set(s.armies.filter(a=>a.faction==='player'&&(!dom||a.dom===dom)).map(a=>a.id));
+  s.selArmy=null; s.selNode=null;
+}
+
+function handleClick(sx,sy,shift){
   const s=state; if(!s) return;
   let hitArmy=null, bd=15;
-  for(const a of s.armies){
+  if(!s.setup) for(const a of s.armies){
     if(a._sx==null) continue;
     const d=Math.hypot(a._sx-sx,a._sy-sy);
     if(d<bd){bd=d;hitArmy=a;}
   }
   let hitNode=null, nd2=Infinity;
-  const NR=Math.max(10,18*cam.zoom);
+  const NR=s.setup?26:Math.max(10,18*cam.zoom);
   for(const nd of s.nodes){
+    if(s.setup && nd.kind!=='land') continue;
     const [x,y]=w2s(nd.wx,nd.wy);
     const d=Math.hypot(x-sx,y-sy);
     if(d<NR && d<nd2){nd2=d;hitNode=nd;}
   }
+  if(s.setup){
+    if(hitNode) pickStart(hitNode.id); else log('請點擊一個陸地節點。','warn');
+    return;
+  }
+  if(frontMode){
+    if(hitNode && hitNode.kind==='land'){ frontDraft.push(hitNode.id); rebuildSidebar(); }
+    return;
+  }
+  const multiOn=shift||multiMode;
+  if(hitArmy && multiOn && hitArmy.faction==='player'){ toggleMulti(hitArmy.id); return; }
   const sel=s.selArmy?s.armies.find(a=>a.id===s.selArmy):null;
 
   if(hitArmy){
     if(sel && hitArmy.id!==sel.id && sel.faction==='player' && hitArmy.faction==='player'
-       && sel.from==null && hitArmy.from==null && sel.node===hitArmy.node
-       && sel.dom===hitArmy.dom){
+       && sel.from==null && hitArmy.from==null && sel.node===hitArmy.node && sel.dom===hitArmy.dom){
       mergeArmies(sel,hitArmy); return;
     }
-    s.selArmy=hitArmy.id; s.selNode=null; rebuildSidebar(); return;
+    s.selArmy=hitArmy.id; s.selNode=null; s.multi.clear(); rebuildSidebar(); return;
   }
   if(hitNode){
-    if(sel && sel.faction==='player' && sel.from==null && hitNode.id!==sel.node){
-      if(orderMove(sel,hitNode.id)){
-        log(`「${sel.name}」向 ${hitNode.name} 移動。`);
-        rebuildSidebar(); return;
-      } else if(sel.dom==='air'){ log('目標超出航程。','warn'); }
+    const movers=selectedArmies();
+    if(movers.length){
+      let n=0; for(const a of movers) if(orderMove(a,hitNode.id)) n++;
+      if(n){ log(`${n} 支部隊向 ${hitNode.name} 移動。`); rebuildSidebar(); return; }
+      if(s.multi.size) { log('所選部隊無法前往該處（航程/路徑不可達）。','warn'); return; }
+      if(movers[0].dom==='air' && movers[0].from==null && movers[0].node!==hitNode.id) log('目標超出航程。','warn');
     }
     s.selNode=hitNode.id; s.selArmy=null; rebuildSidebar(); return;
   }
-  s.selArmy=null; s.selNode=null; rebuildSidebar();
+  s.selArmy=null; s.selNode=null; s.multi.clear(); rebuildSidebar();
 }
 
+function mergeInto(a,b){
+  for(const k in b.eq) a.eq[k]=(a.eq[k]||0)+b.eq[k];
+  b.eq={}; b.fr={}; recalc(b); recalc(a);
+}
 function mergeArmies(a,b){
   if(a.faction!=='player'||b.faction!=='player'||a.dom!==b.dom) return;
-  for(const k in b.eq) a.eq[k]=(a.eq[k]||0)+b.eq[k];
-  recalc(a);
-  state.armies=state.armies.filter(x=>x.id!==b.id);
+  mergeInto(a,b); purge();
   log(`「${b.name}」併入「${a.name}」。`,'good');
+  rebuildSidebar();
+}
+/* 自由合併：同領域部隊集結到最大那支所在處，到達後自動合併 */
+function mergeSelected(){
+  const s=state, list=selectedArmies();
+  if(list.length<2){ log('請先多選至少兩支部隊。','warn'); return; }
+  let merged=0, rally=0;
+  for(const dom of ['land','air','sea']){
+    const g=list.filter(a=>a.dom===dom);
+    if(g.length<2) continue;
+    const still=g.filter(a=>a.from==null);
+    if(!still.length){ log(`${DOM_NAME[dom]}軍部隊皆在行軍中，請抵達後再合併。`,'warn'); continue; }
+    const base=still.reduce((x,y)=>x.val>=y.val?x:y);
+    let gm=0;
+    for(const a of g){
+      if(a===base) continue;
+      if(a.from==null && a.node===base.node){ mergeInto(base,a); merged++; }
+      else if(orderMove(a,base.node)){ a.mergeTo=base.node; gm++; rally++; }
+    }
+    if(gm) base.mergeTo=base.node;
+  }
+  purge();
+  log(`合併完成：立即併入 ${merged} 支，集結中 ${rally} 支（到達後自動合併）。`,'good');
+  rebuildSidebar();
+}
+function mergeAt(nodeId){
+  const s=state;
+  s.multi=new Set(s.armies.filter(a=>a.faction==='player'&&a.from==null&&a.node===nodeId).map(a=>a.id));
+  mergeSelected(); s.multi.clear(); s.selNode=nodeId; rebuildSidebar();
+}
+function autoMerge(){
+  const groups=new Map();
+  for(const a of state.armies){
+    if(a.mergeTo==null||a.units<=0) continue;
+    if(a.from!=null) continue;
+    if(a.node!==a.mergeTo){ a.mergeTo=null; continue; }
+    const k=a.faction+'|'+a.node+'|'+a.dom;
+    let l=groups.get(k); if(!l){ l=[]; groups.set(k,l); } l.push(a);
+  }
+  for(const g of groups.values()){
+    if(g.length<2) continue;
+    const base=g.reduce((x,y)=>x.val>=y.val?x:y);
+    for(const a of g) if(a!==base) mergeInto(base,a);
+    base.mergeTo=null;
+    if(base.faction==='player') log(`「${base.name}」集結合併完成。`,'good');
+  }
+}
+
+/* 出售 */
+function armSell(key,fn){
+  if(sellArm===key){ sellArm=null; clearTimeout(sellTimer); fn(); return; }
+  sellArm=key; clearTimeout(sellTimer);
+  sellTimer=setTimeout(()=>{ sellArm=null; rebuildSidebar(); },3000);
+  rebuildSidebar();
+}
+function sellList(list,label){
+  let t=0;
+  for(const a of list){ t+=Math.floor(a.val*0.5); a.eq={}; a.fr={}; recalc(a); }
+  state.res.player+=t; purge();
+  log(`出售${label}（${list.length} 支部隊），回收 ${t} 資源。`,'good');
+  rebuildSidebar();
+}
+function sellAllAt(nodeId){
+  sellList(state.armies.filter(a=>a.faction==='player'&&a.from==null&&a.node===nodeId),'「'+state.nodes[nodeId].name+'」全部軍隊');
+}
+function sellSelected(){
+  sellList(selectedArmies().filter(a=>a.from==null),'選中軍隊');
+}
+
+/* 戰線 */
+function halve(a){
+  if(a.from!=null||a.units<2) return null;
+  const half={}; let m=0;
+  for(const k in a.eq){
+    const t=Math.floor(a.eq[k]/2);
+    if(t>0){ half[k]=t; a.eq[k]-=t; m+=t; if(a.eq[k]<=0) delete a.eq[k]; }
+  }
+  if(!m){ const k=Object.keys(a.eq)[0]; half[k]=1; a.eq[k]-=1; if(a.eq[k]<=0) delete a.eq[k]; }
+  recalc(a);
+  return createArmy(a.faction,a.node,half,'新編分隊');
+}
+function deployFront(){
+  const s=state, pts=frontDraft.slice();
+  if(pts.length<2){ log('戰線至少需要 2 個點。','warn'); return; }
+  let pool=selectedArmies().filter(a=>a.dom==='land');
+  if(!pool.length) pool=s.armies.filter(a=>a.faction==='player'&&a.dom==='land');
+  if(!pool.length){ log('沒有可部署的陸軍。','warn'); return; }
+  let guard=0;
+  while(pool.length<pts.length && guard++<40){
+    const c=pool.filter(a=>a.from==null&&a.units>=2).sort((x,y)=>y.val-x.val)[0];
+    if(!c) break;
+    const n=halve(c); if(!n) break; pool.push(n);
+  }
+  const fid=s.nextFront++, un=pool.slice(), assign=[];
+  for(let i=0;i<pts.length&&un.length;i++){
+    const P=s.nodes[pts[i]]; let bi=0,bd=1e18;
+    un.forEach((a,j)=>{ const [x,y]=armyPos(a); const d=(x-P.wx)**2+(y-P.wy)**2; if(d<bd){bd=d;bi=j;} });
+    assign.push([un.splice(bi,1)[0],i]);
+  }
+  for(const a of un){
+    const [x,y]=armyPos(a); let bi=0,bd=1e18;
+    pts.forEach((id,i)=>{ const P=s.nodes[id]; const d=(x-P.wx)**2+(y-P.wy)**2; if(d<bd){bd=d;bi=i;} });
+    assign.push([a,bi]);
+  }
+  let ok=0;
+  for(const [a,i] of assign){
+    if(a.from==null && a.node===pts[i]){ a.front=fid; a.frontIdx=i; a.mergeTo=null; ok++; continue; }
+    if(orderMove(a,pts[i],true)){ a.front=fid; a.frontIdx=i; a.mergeTo=null; ok++; }
+  }
+  if(!ok){ log('部隊無法抵達戰線各點。','warn'); return; }
+  s.fronts.push({id:fid,pts,adv:true,name:'戰線'+fid});
+  frontMode=false; frontDraft=[];
+  log(`戰線${fid} 展開：${ok} 支陸軍同時向 ${pts.length} 個點出擊。`,'good');
+  rebuildSidebar();
+}
+function advanceFronts(nm){
+  const s=state;
+  if(!s.fronts.length) return;
+  const adv=new Set(s.fronts.filter(f=>f.adv).map(f=>f.id));
+  for(const a of s.armies){
+    if(a.front==null||a.units<=0||a.from!=null||!adv.has(a.front)) continue;
+    if((nm.get(a.node)||[]).some(x=>x.faction!==a.faction)) continue;
+    if(s.nodes[a.node].owner!==a.faction) continue;
+    const p=bfsPath(a.node,id=>s.nodes[id].owner!==a.faction,10);
+    if(p&&p.length) orderMove(a,p[0],true);
+  }
+}
+
+/* 側欄 HTML 片段 */
+function toolbarHTML(){
+  const b=(act,txt,on)=>`<button class="mini ${on?'pri':''}" data-act="${act}">${txt}</button>`;
+  return `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px">${b('multi','多選模式'+(multiMode?'：開':''),multiMode)}${b('selall','全選')}${b('selland','陸')}${b('selair','空')}${b('selsea','海')}${b('selclear','取消選取')}</div>
+  <div style="font-size:10px;color:#6f8396;margin-bottom:5px">Shift+拖曳框選 · Shift+點擊多選 · 選中後點地圖節點＝全部移動</div>`;
+}
+function multiPanel(){
+  const list=selectedArmies(), c={land:0,air:0,sea:0}; let val=0,u=0;
+  for(const a of list){ c[a.dom||'land']++; val+=a.val; u+=a.units; }
+  return `<div class="row"><b>已選 ${list.length} 支部隊</b><span class="tag">價值 ${val} · ${u}件</span></div>
+  <div class="row"><span class="tag land">陸 ${c.land}</span><span class="tag air">空 ${c.air}</span><span class="tag sea">海 ${c.sea}</span></div>
+  <div style="font-size:11px;color:#7d93a8;margin:4px 0">點擊地圖任一節點＝全部自動尋路前往。</div>
+  <div class="row" style="flex-wrap:wrap;gap:4px;justify-content:flex-start"><button class="mini pri" data-act="mergesel">合併選中</button><button class="mini danger" data-act="sellsel">${sellArm==='sel'?'再按一次確認':'出售選中'}</button><button class="mini" data-act="selclear">取消</button></div>`;
+}
+function nodeTools(n){
+  const here=state.armies.filter(a=>a.faction==='player'&&a.from==null&&a.node===n.id);
+  if(!here.length) return '';
+  const val=here.reduce((t,a)=>t+Math.floor(a.val*0.5),0);
+  return `<div class="row" style="margin-top:7px;flex-wrap:wrap;gap:4px;justify-content:flex-start"><button class="mini" data-act="nodesel:${n.id}">選取此處全部</button><button class="mini" data-act="nodemerge:${n.id}">合併同領域</button><button class="mini danger" data-act="nodesell:${n.id}">${sellArm==='n'+n.id?'再按一次確認':`出售全部(+${val})`}</button></div>`;
+}
+function frontPanelHTML(){
+  const s=state; let h='';
+  if(frontMode){
+    h+=`<div style="font-size:11px;color:#ffd166;margin-bottom:5px">畫線模式：依序點擊陸地節點（已選 ${frontDraft.length} 點）。確認後，選中的陸軍（未選則全部陸軍）會自動分配到各點，同時開戰並持續推進。</div>
+    <div class="row" style="justify-content:flex-start;gap:4px"><button class="mini pri" data-act="frontgo">確認出擊</button><button class="mini" data-act="frontundo">撤銷一點</button><button class="mini" data-act="frontcancel">取消</button></div>`;
+  } else h+=`<button class="mini pri" data-act="frontstart" style="width:100%">畫戰線</button>`;
+  for(const f of s.fronts){
+    const n=s.armies.filter(a=>a.front===f.id).length;
+    h+=`<div class="row" style="margin-top:5px;font-size:11px"><span>${f.name} · ${n} 支</span><span><button class="mini" data-fadv="${f.id}">${f.adv?'推進：開':'推進：關'}</button> <button class="mini" data-fdel="${f.id}">解散</button></span></div>`;
+  }
+  return h;
+}
+function doAct(act){
+  const s=state; const [k,p]=act.split(':'); const id=p!=null?+p:null;
+  switch(k){
+    case 'multi': multiMode=!multiMode; break;
+    case 'selall': pickAll(null); break;
+    case 'selland': pickAll('land'); break;
+    case 'selair': pickAll('air'); break;
+    case 'selsea': pickAll('sea'); break;
+    case 'selclear': s.multi.clear(); s.selArmy=null; break;
+    case 'mergesel': mergeSelected(); return;
+    case 'sellsel': armSell('sel',sellSelected); return;
+    case 'nodesel':
+      s.multi=new Set(s.armies.filter(a=>a.faction==='player'&&a.from==null&&a.node===id).map(a=>a.id));
+      s.selNode=null; break;
+    case 'nodemerge': mergeAt(id); return;
+    case 'nodesell': armSell('n'+id,()=>sellAllAt(id)); return;
+    case 'frontstart': frontMode=true; frontDraft=[]; break;
+    case 'frontgo': deployFront(); return;
+    case 'frontundo': frontDraft.pop(); break;
+    case 'frontcancel': frontMode=false; frontDraft=[]; break;
+  }
   rebuildSidebar();
 }
 
@@ -1713,11 +2096,12 @@ function rebuildSidebar(){
   }).join('')+`<button class="mini pri" onclick="addPreset()" style="width:100%;margin-top:5px">新建預設編制</button>`);
 
   const mine=s.armies.filter(a=>a.faction==='player');
+  setHTML($('armyTools'), toolbarHTML());
   setHTML($('armyList'), mine.length
     ? mine.map(a=>{
         const loc=a.from==null?s.nodes[a.node].name:'移動中';
         const bad=a.from==null && !isSupplied(a)?' ⚠':'';
-        return `<div class="army-item ${a.id===s.selArmy?'sel':''}" data-army="${a.id}">
+        return `<div class="army-item ${(a.id===s.selArmy||s.multi.has(a.id))?'sel':''}" data-army="${a.id}">
           <span class="fac" style="background:${FAC_COLOR[a.faction]}"></span>
           <span class="tag ${a.dom||'land'}">${DOM_NAME[a.dom||'land']}</span>
           <span class="nm">${escapeHtml(a.name)}</span>
@@ -1730,7 +2114,7 @@ function rebuildSidebar(){
   const selN=s.selNode!=null?s.nodes[s.selNode]:null;
   let html;
 
-  if(sel){
+  if(s.multi.size){ html=multiPanel(); } else if(sel){
     const isP=sel.faction==='player';
     const eqRows=Object.keys(sel.eq).filter(k=>sel.eq[k]>0).map(k=>{
       const e=EQ[k];
@@ -1753,7 +2137,7 @@ function rebuildSidebar(){
       ${isP?`<div class="row" style="margin-top:7px"><button class="mini" data-splitall="${sel.id}">拆出一半</button>${sel.from!=null?`<button class="mini" data-stop="${sel.id}">到站後停止</button>`:''}</div>`:''}`;
   } else if(selN){
     const isSea=selN.kind==='sea';
-    const ownerTag=isSea?'<span class="tag sea">海域</span>':`<span class="tag ${selN.owner==='player'?'p':selN.owner==='ai1'?'a1':selN.owner==='ai2'?'a2':'n'}">${FAC_NAME[selN.owner]}</span>`;
+    const ownerTag=isSea?'<span class="tag sea">海域</span>':`<span class="tag" style="background:${hexA(FAC_COLOR[selN.owner],0.22)};color:${FAC_COLOR[selN.owner]}">${FAC_NAME[selN.owner]}</span>`;
     const terr={city:'城市',mountain:'山地',coast:'海岸',plain:'平原',sea:'海域'}[selN.terrain];
     const here=s.armies.filter(a=>a.from==null && a.node===selN.id);
     const list=here.length?here.map(a=>`<div class="row" style="font-size:11px"><span style="color:${FAC_COLOR[a.faction]}">▲</span><span class="tag ${a.dom||'land'}">${DOM_NAME[a.dom||'land']}</span><span style="flex:1">${escapeHtml(a.name)}</span><span style="color:#7d93a8">${a.units}件</span></div>`).join(''):'<div style="color:#5a6b7b;font-size:11px">無駐軍</div>';
@@ -1773,9 +2157,10 @@ function rebuildSidebar(){
     html=`<div class="row"><b>${selN.name}</b>${ownerTag}</div>
       <div class="row" style="font-size:11px;color:#7d93a8"><span>地形：${terr}${port?' · 港口⚓':''}</span>${isSea?'':`<span>收入：${selN.income}/tick</span>`}</div>
       ${isSea?'':`<div class="row" style="font-size:11px;color:#7d93a8"><span>防禦加成：${(selN.defBonus*100).toFixed(0)}%</span></div>`}
-      <div style="margin-top:6px;border-top:1px solid #16202b;padding-top:5px">${list}</div>${deploy}`;
+      <div style="margin-top:6px;border-top:1px solid #16202b;padding-top:5px">${list}</div>${nodeTools(selN)}${deploy}`;
   } else html='<div style="color:#5a6b7b;font-size:11px">點擊地圖上的軍隊標記或節點。</div>';
   setHTML($('selPanel'),html);
+  setHTML($('frontPanel'),frontPanelHTML());
 
   updateShopState();
   updateTopbar();
@@ -1817,7 +2202,10 @@ $('sidebar').addEventListener('click',e=>{
   if((m=t.closest('[data-splitall]'))){ splitAll(+m.dataset.splitall); return; }
   if((m=t.closest('[data-stop]'))){ const a=state.armies.find(x=>x.id===+m.dataset.stop); if(a){a.path=[]; rebuildSidebar();} return; }
   if((m=t.closest('[data-newarmy]'))){ const [id,kind]=m.dataset.newarmy.split(':'); newArmyHere(+id,kind); return; }
-  if((m=t.closest('[data-army]'))){ selectArmy(+m.dataset.army); return; }
+  if((m=t.closest('[data-act]'))){ doAct(m.dataset.act); return; }
+  if((m=t.closest('[data-fadv]'))){ const f=state.fronts.find(x=>x.id===+m.dataset.fadv); if(f){ f.adv=!f.adv; rebuildSidebar(); } return; }
+  if((m=t.closest('[data-fdel]'))){ const id=+m.dataset.fdel; for(const a of state.armies) if(a.front===id) a.front=null; state.fronts=state.fronts.filter(x=>x.id!==id); rebuildSidebar(); return; }
+  if((m=t.closest('[data-army]'))){ selectArmy(+m.dataset.army,e.shiftKey); return; }
 });
 
 function updateTopbar(){
@@ -1829,14 +2217,15 @@ function updateTopbar(){
   const c={land:0,air:0,sea:0};
   for(const a of s.armies) if(a.faction==='player' && a.dom) c[a.dom]+=a.units;
   $('uiForce').innerHTML=`<span class="tag land">陸 ${c.land}</span> <span class="tag air">空 ${c.air}</span> <span class="tag sea">海 ${c.sea}</span>`;
-  $('uiStatus').textContent=s.gameOver?(s.gameOver==='win'?'勝利':'失敗'):(paused?'已暫停':'');
-  $('uiStatus').style.color=s.gameOver==='win'?'#5fd08a':s.gameOver==='lose'?'#ff6b6b':'#8fa3b8';
+  $('uiAI').textContent=s.setup?'':`AI ${s.aiAlive}/${AIS.length}`;
+  $('uiStatus').textContent=s.setup?'請選擇起始落點':s.gameOver?'失敗':(paused?'已暫停':(s.won?'已勝利·可繼續':''));
+  $('uiStatus').style.color=s.gameOver==='lose'?'#ff6b6b':s.won?'#5fd08a':'#8fa3b8';
 }
 
 /* ============================================================
    UI 動作
    ============================================================ */
-function selectArmy(id){ state.selArmy=id; state.selNode=null; rebuildSidebar(); }
+function selectArmy(id,shift){ if(shift||multiMode){ toggleMulti(id); return; } state.selArmy=id; state.selNode=null; state.multi.clear(); rebuildSidebar(); }
 function renameArmy(id){
   const a=state.armies.find(x=>x.id===id);
   if(!a||a.faction!=='player') return;
@@ -1946,19 +2335,24 @@ $('btnSpeed').addEventListener('click',()=>{
 $('btnFx').addEventListener('click',()=>{
   fxOn=!fxOn; fx.length=0; $('btnFx').textContent='特效:'+(fxOn?'開':'關');
 });
-let _confirmNewTimer=null;
-$('btnNew').addEventListener('click',()=>{
-  const btn=$('btnNew');
-  if(btn.dataset.arm!=='1'){
-    btn.dataset.arm='1'; btn.textContent='確定重開?';
-    clearTimeout(_confirmNewTimer);
-    _confirmNewTimer=setTimeout(()=>{ btn.dataset.arm=''; btn.textContent='新遊戲'; },3000);
-    return;
-  }
-  btn.dataset.arm=''; btn.textContent='新遊戲'; clearTimeout(_confirmNewTimer);
-  newGame(); rebuildSidebar();
+let _setupPrevPause=false;
+function openSetup(){
+  _setupPrevPause=paused; paused=true;
+  $('setupCancel').style.display=state?'':'none';
+  $('setupModal').style.display='flex';
+}
+function closeSetup(){
+  $('setupModal').style.display='none';
+  paused=_setupPrevPause; updateTopbar();
+}
+function confirmSetup(){
+  const n=+$('aiCnt').value;
+  $('setupModal').style.display='none';
   paused=false; $('btnPause').textContent='暫停';
-});
+  startSetup(n); rebuildSidebar();
+}
+$('aiCnt').addEventListener('input',()=>{ $('aiCntLbl').textContent=$('aiCnt').value; });
+$('btnNew').addEventListener('click',openSetup);
 
 /* ============================================================
    啟動
@@ -1967,7 +2361,7 @@ $('btnNew').addEventListener('click',()=>{
   resize();
   buildShopOnce();
   const ok=loadGame();
-  if(!ok) newGame();
+  if(!ok) openSetup();
   rebuildSidebar();
   requestAnimationFrame(loop);
 })();
